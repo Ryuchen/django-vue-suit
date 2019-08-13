@@ -1,0 +1,12 @@
+# IntelliJ project files
+.idea/
+
+
+# Python packages build temp files
+build/
+dist/
+*.egg-info/
+
+__pycache__/
+
+venv/

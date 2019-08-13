@@ -1,0 +1,7 @@
+include LICENSE
+include MANIFEST.in
+include CHANGELOG.md
+include __init__.py
+
+graft docs
+graft vueSuit

@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+{% load static %}
+{% load simpletags %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  <a-button>
+    <a href="{% url 'admin:import-students' %}">导入 学生</a>
+  </a-button>
+{% endblock %}

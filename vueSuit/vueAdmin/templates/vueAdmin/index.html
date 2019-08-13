@@ -1,0 +1,26 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load static %}
+{% load vuetags %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static "admin/css/dashboard.css" %}">
+{% endblock %}
+
+{% block x-template %}
+  {% include 'admin/layouts/layout-demo-a.html' %}
+{% endblock %}
+
+{# site application section #}
+{% block app %}
+  <layout-demo-a></layout-demo-a>
+{% endblock %}
+{# site application section #}
+
+{% block scripts %}
+  <script type="text/javascript">
+    window.mixins = {};
+  </script>
+  {{ block.super }}
+{% endblock %}

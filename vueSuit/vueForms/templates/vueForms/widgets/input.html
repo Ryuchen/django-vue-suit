@@ -1,0 +1,1 @@
+<a-input type="{{ widget.type }}" name="{{ widget.name }}" {% if widget.value != None %}v-model="{{ widget.value|stringformat:'s' }}"{% endif %} {% include "vueForms/widgets/attrs.html" %} />

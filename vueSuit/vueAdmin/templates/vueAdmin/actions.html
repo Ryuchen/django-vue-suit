@@ -1,0 +1,33 @@
+{% load i18n %}
+
+<a-form layout="inline">
+  {% block actions %}
+    {% block actions-form %}
+      {% for field in action_form %}
+        {% if field.label %}
+          <a-form-item label="{{ field.label }}">
+            {{ field }}
+          </a-form-item>
+        {% endif %}
+      {% endfor %}
+    {% endblock %}
+
+    <a-form-item>
+      {% block actions-submit %}
+        <a-button html-type="submit" title="{% trans "Run the selected action" %}" name="index" value="{{ action_index|default:0 }}"> {% trans "Go" %} </a-button>
+      {% endblock %}
+    </a-form-item>
+
+    <a-form-item>
+      {% block actions-counter %}
+        {% if actions_selection_counter %}
+          {% if cl.result_count != cl.result_list|length %}
+            <a-tag>{% blocktrans %} Select all {% endblocktrans %}</a-tag>
+            <a-tag>{% trans "Clear selection" %}
+            </a-tag>
+          {% endif %}
+        {% endif %}
+      {% endblock %}
+    </a-form-item>
+  {% endblock %}
+</a-form>
