@@ -1,24 +1,12 @@
-{% load static %}
-{% load vuetags %}
+{% load i18n static vueAdmin_sets %}
 
-{# common component import section #}
 {# !!! Don't import in any other pages again !!! #}
-{% include 'admin/components/iframe/index.html' %}
-{# common component import section #}
+{% include 'vueAdmin/layouts/components/header/index.html' %}
+{% include 'vueAdmin/layouts/components/sidebar/index.html' %}
+{% include 'vueAdmin/layouts/components/footer/index.html' %}
+{% include 'vueAdmin/components/iframe/index.html' %}
 
-{% include 'admin/layouts/components/header/index.html' %}
-{% include 'admin/layouts/components/sidebar/index.html' %}
-{% include 'admin/layouts/components/footer/index.html' %}
-
-{% if 'ANT_DESIGN_VUE_HOME_TYPE'|config == 'Workplace' %}
-  {% include 'admin/pages/dashboard/workplace.html' %}
-{% elif 'ANT_DESIGN_VUE_HOME_TYPE'|config == 'Overview' %}
-  {% include 'admin/pages/dashboard/overview.html' %}
-{% endif %}
-
-<link href="{% static 'web/css/pages/dashboard.css' %}" rel="stylesheet">
-
-<script type="text/x-template" id="layout-demo-a">
+<template id="layout-demo-a">
   <a-layout>
     <demo-header></demo-header>
     <a-layout style="height: calc(100vh - 64px)">
@@ -26,31 +14,19 @@
       <a-layout>
         <a-layout-content>
           <div class="card-container" id="content-wrapper">
-            <a-tabs
-                hideAdd
-                type="editable-card"
-                :tabBarGutter=2
-                v-model="activeKey"
+            <a-tabs hide-add type="editable-card" :tabBarGutter=2 v-model="activeKey"
                 @edit="onEdit"
                 @prevClick="callback"
                 @nextClick="callback"
                 @tabClick="onSelect"
             >
-              <a-tab-pane v-if="home.type == 'Workplace'" key="0" closable>
-                <span slot="tab"><a-icon type="home"></a-icon><% home.title %></span>
-                <workplace></workplace>
-              </a-tab-pane>
-              <a-tab-pane v-else-if="home.type == 'Overview'" key="0" closable>
-                <span slot="tab"><a-icon type="home"></a-icon><% home.title %></span>
-                <overview></overview>
-              </a-tab-pane>
-              <a-tab-pane v-else key="0" closable>
-                <span slot="tab"><a-icon type="home"></a-icon><% home.title %></span>
-                <customize :href="home.url"></customize>
+              <a-tab-pane key="0" closable>
+                <span slot="tab"><a-icon type="home"></a-icon>{% trans 'Dashboard' %}</span>
+                <suit-iframe :href="`{% url 'admin:dashboard' %}`" :height="height"></suit-iframe>
               </a-tab-pane>
               <a-tab-pane v-for="(pane, index) in activePanes" :key="pane.key">
                 <span slot="tab"><a-icon :type="pane.icon"></a-icon><% pane.name %></span>
-                <iframe-wrapper :href="pane.content" :height="height"></iframe-wrapper>
+                <suit-iframe :href="pane.content" :height="height"></suit-iframe>
               </a-tab-pane>
             </a-tabs>
           </div>
@@ -59,15 +35,14 @@
       </a-layout>
     </a-layout>
   </a-layout>
-</script>
+</template>
 
-<script type="text/javascript">
+<script type="application/javascript">
   Vue.component('layout-demo-a', {
     delimiters: ['<%', '%>'],
     template: '#layout-demo-a',
     data: function () {
       return {
-        home: JSON.parse(`{% adv_home %}`),
         height: `${window.innerHeight - 240}px`
       }
     },

@@ -1,10 +1,10 @@
-{% extends "admin/base_site.html" %}
-{% load i18n static admin_list admin_urls vuetags %}
+{% extends "vueAdmin/base_site.html" %}
+{% load i18n static vueAdmin_list vueAdmin_urls vueAdmin_sets %}
 
 {# site stylesheet section #}
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" type="text/css" href="{% static "web/css/changelist.css" %}">
+  <link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/pages/changelist.css" %}">
   {% if cl.formset or action_form %}
     <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
   {% endif %}
@@ -15,12 +15,27 @@
 {% block extrahead %}
   {{ block.super }}
   {{ media }}
+  <script type="application/javascript">
+    window.data = {
+      sources: [],
+    };
+    window.mixins = {
+      data: function () {
+        return {
+          ...window.data
+        }
+      },
+      methods: {
+      }
+    };
+  </script>
 {% endblock %}
 {# addtional extra stylesheet or javascript #}
 
 {% block x-template %}
-  {% include 'admin/filter.html' %}
-  {% include 'admin/components/pagination/index.html' %}
+  {% include 'vueAdmin/filter.html' %}
+  {% include 'vueAdmin/components/table/index.html' %}
+  {% include 'vueAdmin/components/pagination/index.html' %}
 {% endblock %}
 
 {% block content %}
@@ -58,7 +73,7 @@
 
       {% block date_hierarchy %}
         {% if cl.date_hierarchy %}
-          {% adv_date_hierarchy cl %}
+          {% date_hierarchy cl %}
         {% endif %}
       {% endblock %}
 
@@ -85,25 +100,18 @@
           <div>{{ cl.formset.management_form }}</div>
         {% endif %}
 
-        <a-row type="flex" justify="space-between">
-          <a-col :sm="24" :md="12">
-            <div>
-              {% if action_form and cl.show_admin_actions %}
-                {% admin_actions %}
-              {% endif %}
-            </div>
-          </a-col>
-          <a-col :sm="24" :md="12">
-            {% block pagination %}
-              <div class="pagination">
-                <demo-component-pagination></demo-component-pagination>
-              </div>
-            {% endblock %}
-          </a-col>
-        </a-row>
+        {% if action_form and cl.show_admin_actions %}
+          {% admin_actions %}
+        {% endif %}
 
         {% block result_list %}
           {% result_list cl %}
+        {% endblock %}
+
+        {% block pagination %}
+          <div class="pagination">
+            <demo-component-pagination></demo-component-pagination>
+          </div>
         {% endblock %}
       </form>
     </div>
@@ -112,29 +120,5 @@
 {% endblock %}
 
 {% block scripts %}
-  <script type="text/javascript">
-    window.mixins = {
-      data: function () {
-        return {
-          placeholder: '{% trans 'Search' %}：{% adv_search_placeholder %}',
-          searchInput: '{{ cl.query }}',
-          columns: []
-        }
-      },
-      created: function () {
-        this.columns = this.generateTableHeader();
-      },
-      methods: {
-        generateTableHeader: function () {
-          const header_data = JSON.parse(`{% adv_result_header cl %}`);
-          console.log(header_data);
-          return header_data
-        },
-        generateTableData: function () {
-          const table_data = {% adv_result_list cl %};
-        }
-      }
-    };
-  </script>
   {{ block.super }}
 {% endblock %}

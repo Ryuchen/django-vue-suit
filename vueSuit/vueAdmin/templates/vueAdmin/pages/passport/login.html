@@ -1,0 +1,119 @@
+{% extends "vueAdmin/base_site.html" %}
+{% load i18n static vueAdmin_sets %}
+
+{# site stylesheet section #}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/pages/passport.css" %}">
+{% endblock %}
+{# site stylesheet section #}
+
+{# addtional extra stylesheet or javascript #}
+{% block extrahead %}
+  {{ form.media }}
+{% endblock %}
+{# addtional extra stylesheet or javascript #}
+
+{% block app %}
+  {% if form.errors and not form.non_field_errors %}
+    <a-alert message="{% if form.errors.items|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}" banner></a-alert>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    {% for error in form.non_field_errors %}
+      <a-alert message="{{ error }}" banner></a-alert>
+    {% endfor %}
+  {% endif %}
+
+  <div id="passport-container">
+    {% if user.is_authenticated %}
+      <p class="errornote">
+      {% blocktrans trimmed %}
+        You are authenticated as {{ username }}, but are not authorized to
+        access this page. Would you like to login to a different account?
+      {% endblocktrans %}
+      </p>
+    {% endif %}
+    <a-form id="demo-login-from" :form="form" class="login-form" @submit="handleSubmit">
+      <a-form-item
+        {% if form.username.errors %}
+          has-feedback
+          validate-status="error"
+          help="{{ form.username.errors|striptags }}"
+        {% endif %}
+        label="{% trans 'Username' %}"
+      >
+        {{ form.username }}
+      </a-form-item>
+      <a-form-item
+        {% if form.password.errors %}
+          has-feedback
+          validate-status="error"
+          help="{{ form.password.errors|striptags }}"
+        {% endif %}
+        label="{% trans 'Password' %}"
+      >
+        {{ form.password }}
+      </a-form-item>
+      <a-form-item>
+        <a-checkbox
+          v-decorator="[
+            'remember',
+            {
+              valuePropName: 'checked',
+              initialValue: true,
+            }
+          ]"
+        >
+          Remember me
+        </a-checkbox>
+        {% url 'admin:password_reset' as password_reset_url %}
+        {% if password_reset_url %}
+          <a class="login-form-forgot" href="{{ password_reset_url }}">{% trans 'Forgotten password?' %}</a>
+        {% endif %}
+        <a-button type="primary" html-type="submit" class="login-form-button">
+          {% trans 'Log in' %}
+        </a-button>
+        Or <a href=""> register now! </a>
+      </a-form-item>
+    </a-form>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script type="application/javascript">
+    Vue.prototype.$http = axios;
+    window.mixins.mixins = {
+      data: function () {
+        return {
+          form: this.$form.createForm(this)
+        }
+      },
+      methods: {
+        handleSubmit (e) {
+          e.preventDefault();
+          this.form.validateFields((err, values) => {
+            if (!err) {
+              const formData = new FormData();
+              for (let key in values) {
+                if (values.hasOwnProperty(key)) {
+                  formData.append(key, values[key]);
+                }
+              }
+              formData.append('next', `{{ next }}`);
+              formData.append('csrfmiddlewaretoken', `{{ csrf_token }}`);
+              this.$http.post("{{ app_path }}", formData, {
+                  headers: {
+                    'X-CSRFToken': Cookies.get('csrftoken')
+                  }
+                })
+                .then(function () {
+                  window.location.reload();
+                })
+            }
+          });
+        }
+      }
+    };
+  </script>
+{% endblock %}

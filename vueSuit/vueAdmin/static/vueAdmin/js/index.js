@@ -2,11 +2,6 @@
   window.Bus = new Vue(); // 将 vue 的事件总线注册到 window 上
 
   /*
-   * 创建将要绑定到全局 vue 实例的 mixins 实例
-   */
-  // window.mixins = {};
-
-  /*
    * 声明 vuex 的状态管理
    */
   const store = new Vuex.Store({
@@ -71,7 +66,7 @@
     delimiters: ['<%', '%>'],
     el: '#app',
     store,
-    mixins: [window.mixins],
+    mixins: window.mixins.mixins,
     created: function () {
       if (window.innerWidth <= 992) {
         this.$store.commit('app/changeCollapsed');

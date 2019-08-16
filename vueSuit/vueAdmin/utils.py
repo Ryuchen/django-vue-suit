@@ -376,7 +376,7 @@ def help_text_for_field(name, model):
 
 
 def display_for_field(value, field, empty_value_display):
-    from django.contrib.admin.templatetags.admin_list import _boolean_icon
+    from .templatetags.vueAdmin_list import _boolean_icon
 
     if getattr(field, 'flatchoices', None):
         return dict(field.flatchoices).get(value, empty_value_display)
@@ -401,7 +401,7 @@ def display_for_field(value, field, empty_value_display):
 
 
 def display_for_value(value, empty_value_display, boolean=False):
-    from django.contrib.admin.templatetags.admin_list import _boolean_icon
+    from .templatetags.vueAdmin_list import _boolean_icon
 
     if boolean:
         return _boolean_icon(value)

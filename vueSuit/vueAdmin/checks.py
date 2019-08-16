@@ -58,7 +58,7 @@ def _contains_subclass(class_path, candidate_paths):
 
 
 def check_admin_app(app_configs, **kwargs):
-    from django.contrib.admin.sites import all_sites
+    from .sites import all_sites
     errors = []
     for site in all_sites:
         errors.extend(site.check(app_configs))
@@ -69,7 +69,7 @@ def check_dependencies(**kwargs):
     """
     Check that the admin's dependencies are correctly installed.
     """
-    if not apps.is_installed('django.contrib.admin'):
+    if not apps.is_installed('vueSuit.vueAdmin'):
         return []
     errors = []
     app_dependencies = (
@@ -458,7 +458,7 @@ class BaseModelAdminChecks:
     def _check_radio_fields_value(self, obj, val, label):
         """ Check type of a value of `radio_fields` dictionary. """
 
-        from django.contrib.admin.options import HORIZONTAL, VERTICAL
+        from .options import HORIZONTAL, VERTICAL
 
         if val not in (HORIZONTAL, VERTICAL):
             return [
@@ -691,7 +691,7 @@ class ModelAdminChecks(BaseModelAdminChecks):
                 )
             ]
 
-        from django.contrib.admin.options import InlineModelAdmin
+        from .options import InlineModelAdmin
 
         if not _issubclass(inline, InlineModelAdmin):
             return [
@@ -762,7 +762,7 @@ class ModelAdminChecks(BaseModelAdminChecks):
     def _check_list_display_links(self, obj):
         """ Check that list_display_links is a unique subset of list_display.
         """
-        from django.contrib.admin.options import ModelAdmin
+        from .options import ModelAdmin
 
         if obj.list_display_links is None:
             return []
@@ -808,7 +808,7 @@ class ModelAdminChecks(BaseModelAdminChecks):
         3. SomeListFilter - a non-field list filter class
         """
 
-        from django.contrib.admin import ListFilter, FieldListFilter
+        from . import ListFilter, FieldListFilter
 
         if callable(item) and not isinstance(item, models.Field):
             # If item is option 3, it should be a ListFilter...

@@ -205,12 +205,14 @@ class Widget(metaclass=MediaDefiningClass):
     template_name = None
     supports_microseconds = True
 
-    def __init__(self, attrs=None):
+    def __init__(self, attrs=None, vttrs=None):
         self.attrs = {} if attrs is None else attrs.copy()
+        self.vttrs = {} if vttrs is None else vttrs.copy()
 
     def __deepcopy__(self, memo):
         obj = copy.copy(self)
         obj.attrs = self.attrs.copy()
+        obj.vttrs = self.vttrs.copy()
         memo[id(self)] = obj
         return obj
 
@@ -228,14 +230,14 @@ class Widget(metaclass=MediaDefiningClass):
             return formats.localize_input(value)
         return str(value)
 
-    def get_context(self, name, value, attrs):
+    def get_context(self, name, value, attrs, vttrs):
         context = {}
         context['widget'] = {
             'name': name,
             'is_hidden': self.is_hidden,
-            'required': self.is_required,
             'value': self.format_value(value),
             'attrs': self.build_attrs(self.attrs, attrs),
+            'vttrs': self.build_attrs(self.vttrs, vttrs),
             'template_name': self.template_name,
         }
         return context
@@ -246,9 +248,9 @@ class Widget(metaclass=MediaDefiningClass):
             renderer = get_default_renderer()
         return mark_safe(renderer.render(template_name, context))
 
-    def render(self, name, value, attrs=None, renderer=None):
+    def render(self, name, value, attrs=None, vttrs=None, renderer=None):
         """Render the widget as an HTML string."""
-        context = self.get_context(name, value, attrs)
+        context = self.get_context(name, value, attrs, vttrs)
         return self._render(self.template_name, context, renderer)
 
     def build_attrs(self, base_attrs, extra_attrs=None):
@@ -288,14 +290,17 @@ class Input(Widget):
     input_type = None  # Subclasses must define this.
     template_name = 'vueForms/widgets/input.html'
 
-    def __init__(self, attrs=None):
+    def __init__(self, attrs=None, vttrs=None):
         if attrs is not None:
             attrs = attrs.copy()
             self.input_type = attrs.pop('type', self.input_type)
-        super().__init__(attrs)
+        if vttrs is not None:
+            vttrs = vttrs.copy()
+            self.input_type = vttrs.pop('type', self.input_type)
+        super().__init__(attrs, vttrs)
 
-    def get_context(self, name, value, attrs):
-        context = super().get_context(name, value, attrs)
+    def get_context(self, name, value, attrs, vttrs):
+        context = super().get_context(name, value, attrs, vttrs)
         context['widget']['type'] = self.input_type
         return context
 
@@ -307,36 +312,36 @@ class TextInput(Input):
 
 class NumberInput(Input):
     input_type = 'number'
-    template_name = 'django/forms/widgets/number.html'
+    template_name = 'vueForms/widgets/number.html'
 
 
 class EmailInput(Input):
     input_type = 'email'
-    template_name = 'django/forms/widgets/email.html'
+    template_name = 'vueForms/widgets/email.html'
 
 
 class URLInput(Input):
     input_type = 'url'
-    template_name = 'django/forms/widgets/url.html'
+    template_name = 'vueForms/widgets/url.html'
 
 
 class PasswordInput(Input):
     input_type = 'password'
-    template_name = 'django/forms/widgets/password.html'
+    template_name = 'vueForms/widgets/password.html'
 
-    def __init__(self, attrs=None, render_value=False):
-        super().__init__(attrs)
+    def __init__(self, attrs=None, vttrs=None, render_value=False):
+        super().__init__(attrs, vttrs)
         self.render_value = render_value
 
-    def get_context(self, name, value, attrs):
+    def get_context(self, name, value, attrs, vttrs):
         if not self.render_value:
             value = None
-        return super().get_context(name, value, attrs)
+        return super().get_context(name, value, attrs, vttrs)
 
 
 class HiddenInput(Input):
     input_type = 'hidden'
-    template_name = 'django/forms/widgets/hidden.html'
+    template_name = 'vueForms/widgets/hidden.html'
 
 
 class MultipleHiddenInput(HiddenInput):
@@ -344,7 +349,7 @@ class MultipleHiddenInput(HiddenInput):
     Handle <input type="hidden"> for fields that have a list
     of values.
     """
-    template_name = 'django/forms/widgets/multiple_hidden.html'
+    template_name = 'vueForms/widgets/multiple_hidden.html'
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
@@ -379,7 +384,7 @@ class MultipleHiddenInput(HiddenInput):
 class FileInput(Input):
     input_type = 'file'
     needs_multipart_form = True
-    template_name = 'django/forms/widgets/file.html'
+    template_name = 'vueForms/widgets/file.html'
 
     def format_value(self, value):
         """File input never renders a value."""
@@ -400,7 +405,7 @@ class ClearableFileInput(FileInput):
     clear_checkbox_label = _('Clear')
     initial_text = _('Currently')
     input_text = _('Change')
-    template_name = 'django/forms/widgets/clearable_file_input.html'
+    template_name = 'vueForms/widgets/clearable_file_input.html'
 
     def clear_checkbox_name(self, name):
         """
@@ -467,7 +472,7 @@ class ClearableFileInput(FileInput):
 
 
 class Textarea(Widget):
-    template_name = 'django/forms/widgets/textarea.html'
+    template_name = 'vueForms/widgets/textarea.html'
 
     def __init__(self, attrs=None):
         # Use slightly better defaults than HTML's 20x2 box
@@ -477,31 +482,31 @@ class Textarea(Widget):
         super().__init__(default_attrs)
 
 
-class DateTimeBaseInput(TextInput):
+class DateTimeBaseInput(Widget):
     format_key = ''
     supports_microseconds = False
 
-    def __init__(self, attrs=None, format=None):
+    def __init__(self, attrs=None, formatter=None):
         super().__init__(attrs)
-        self.format = format or None
+        self.formatter = formatter or None
 
     def format_value(self, value):
-        return formats.localize_input(value, self.format or formats.get_format(self.format_key)[0])
+        return formats.localize_input(value, self.formatter or formats.get_format(self.format_key)[0])
 
 
 class DateInput(DateTimeBaseInput):
     format_key = 'DATE_INPUT_FORMATS'
-    template_name = 'django/forms/widgets/date.html'
+    template_name = 'vueForms/widgets/date.html'
 
 
 class DateTimeInput(DateTimeBaseInput):
     format_key = 'DATETIME_INPUT_FORMATS'
-    template_name = 'django/forms/widgets/datetime.html'
+    template_name = 'vueForms/widgets/datetime.html'
 
 
 class TimeInput(DateTimeBaseInput):
     format_key = 'TIME_INPUT_FORMATS'
-    template_name = 'django/forms/widgets/time.html'
+    template_name = 'vueForms/widgets/time.html'
 
 
 # Defined at module level so that CheckboxInput is picklable (#17976)
@@ -509,9 +514,8 @@ def boolean_check(v):
     return not (v is False or v is None or v == '')
 
 
-class CheckboxInput(Input):
-    input_type = 'checkbox'
-    template_name = 'django/forms/widgets/checkbox.html'
+class CheckboxInput(Widget):
+    template_name = 'vueForms/widgets/checkbox.html'
 
     def __init__(self, attrs=None, check_test=None):
         super().__init__(attrs)
@@ -674,8 +678,7 @@ class ChoiceWidget(Widget):
 
 
 class Select(ChoiceWidget):
-    input_type = 'select'
-    template_name = 'django/forms/widgets/select.html'
+    template_name = 'vueForms/widgets/select.html'
     option_template_name = 'django/forms/widgets/select_option.html'
     add_id_index = False
     checked_attribute = {'selected': True}

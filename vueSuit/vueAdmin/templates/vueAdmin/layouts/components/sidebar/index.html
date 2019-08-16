@@ -1,8 +1,8 @@
-{% load static vuetags %}
+{% load static vueAdmin_sets %}
 
-{% include "admin/components/submenu/index.html" %}
+{% include "vueAdmin/components/submenu/index.html" %}
 
-<link rel="stylesheet" type="text/css" href="{% static "web/css/layouts/components/sidebar.css" %}">
+<link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/layouts/components/sidebar.css" %}">
 
 <script type="text/x-template" id="demo-sidebar">
   <a-layout-sider :trigger="null" collapsible v-model="collapsed" theme="light">
@@ -26,9 +26,9 @@
       @openChange="onOpenChange"
     >
       <template v-for="item in menus">
-        <a-menu-item v-if="!item.models" :key="item.key" :url="item.url" :title="item.name" :name="item.name" :icon="item.icon">
-        <a-icon :type="item.icon"></a-icon>
-          <span><% item.name %></span>
+        <a-menu-item v-if="!item.models" :key="item.key" :url="item.admin_url" :title="item.name" :name="item.name" :icon="item.icon">
+          <a-icon :type="item.icon"></a-icon>
+          <span><% item.app_label %></span>
         </a-menu-item>
         <sub-menu v-else :menus="item" :key="item.key"></sub-menu>
       </template>
@@ -36,13 +36,15 @@
   </a-layout-sider>
 </script>
 
+{{ app_list|json_script:"menu-data" }}
+
 <script type="text/javascript">
   Vue.component('demo-sidebar', {
     delimiters: ['<%', '%>'],
     template: '#demo-sidebar',
     data: function () {
       return {
-        menus: JSON.parse(`{% adv_menu %}`),
+        menus: JSON.parse(document.getElementById('menu-data').textContent),
         openKeys: [],
         rootSubmenuKeys: [],
       }

@@ -2,16 +2,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.contrib.admin import FieldListFilter
-from django.contrib.admin.exceptions import (
-    DisallowedModelAdminLookup, DisallowedModelAdminToField,
-)
-from django.contrib.admin.options import (
-    IS_POPUP_VAR, TO_FIELD_VAR, IncorrectLookupParameters,
-)
-from django.contrib.admin.utils import (
-    get_fields_from_path, lookup_needs_distinct, prepare_lookup_value, quote,
-)
+
 from django.core.exceptions import (
     FieldDoesNotExist, ImproperlyConfigured, SuspiciousOperation,
 )
@@ -22,6 +13,17 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.timezone import make_aware
 from django.utils.translation import gettext
+
+from vueSuit.vueAdmin import FieldListFilter
+from vueSuit.vueAdmin.exceptions import (
+    DisallowedModelAdminLookup, DisallowedModelAdminToField,
+)
+from vueSuit.vueAdmin.options import (
+    IS_POPUP_VAR, TO_FIELD_VAR, IncorrectLookupParameters,
+)
+from vueSuit.vueAdmin.utils import (
+    get_fields_from_path, lookup_needs_distinct, prepare_lookup_value, quote,
+)
 
 # Changelist settings
 ALL_VAR = 'all'
@@ -471,7 +473,5 @@ class ChangeList:
 
     def url_for_result(self, result):
         pk = getattr(result, self.pk_attname)
-        return reverse('admin:%s_%s_change' % (self.opts.app_label,
-                                               self.opts.model_name),
-                       args=(quote(pk),),
+        return reverse('admin:%s_%s_change' % (self.opts.app_label, self.opts.model_name), args=(quote(pk),),
                        current_app=self.model_admin.admin_site.name)

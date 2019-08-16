@@ -15,22 +15,22 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.core import validators
 from django.core.exceptions import ValidationError
-# Provide this import for backwards compatibility.
-from django.core.validators import EMPTY_VALUES  # NOQA
-from django.forms.boundfield import BoundField
-from django.forms.utils import from_current_timezone, to_current_timezone
-from django.forms.widgets import (
+
+from django.utils import formats
+from django.utils.dateparse import parse_duration
+from django.utils.duration import duration_string
+from django.utils.ipv6 import clean_ipv6_address
+from django.utils.translation import gettext_lazy as _, ngettext_lazy
+
+from .boundfield import BoundField
+from .utils import from_current_timezone, to_current_timezone
+from .widgets import (
     FILE_INPUT_CONTRADICTION, CheckboxInput, ClearableFileInput, DateInput,
     DateTimeInput, EmailInput, FileInput, HiddenInput, MultipleHiddenInput,
     NullBooleanSelect, NumberInput, Select, SelectMultiple,
     SplitDateTimeWidget, SplitHiddenDateTimeWidget, TextInput, TimeInput,
     URLInput,
 )
-from django.utils import formats
-from django.utils.dateparse import parse_duration
-from django.utils.duration import duration_string
-from django.utils.ipv6 import clean_ipv6_address
-from django.utils.translation import gettext_lazy as _, ngettext_lazy
 
 __all__ = (
     'Field', 'CharField', 'IntegerField',

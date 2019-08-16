@@ -1,4 +1,4 @@
-{% load vuetags %}
+{% load vueAdmin_sets %}
 
 <script type="text/x-template" id="demo-footer">
   <a-layout-footer style="text-align: center">
@@ -15,7 +15,7 @@
     delimiters: ['<%', '%>'],
     template: '#demo-footer',
     data () {
-      return JSON.parse(`{% adv_footer %}`)
+      return JSON.parse(`{% vue_footer %}`)
     }
   })
 </script>

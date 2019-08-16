@@ -1,5 +1,5 @@
 from django import template
-from django.contrib.admin.models import LogEntry
+from vueSuit.vueAdmin.models import LogEntry
 
 register = template.Library()
 

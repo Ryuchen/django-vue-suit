@@ -5,13 +5,13 @@
       <div>
         <a-divider dashed>
           <span>
-            {% blocktrans count counter=cl.result_count %}
-              Result: {{ counter }} {% plural %} Results: {{ counter }}
+            {% blocktrans with counter=cl.result_count %}
+              Result: {{ counter }}
             {% endblocktrans %}
           </span>
           <a-divider type="vertical"></a-divider>
           <span>
-            <a href="?{% if cl.is_popup %}_popup=1{% endif %}">
+            <a href="">
               {% if cl.show_full_result_count %}
                 {% blocktrans with full_result_count=cl.full_result_count %}
                   Total: {{ full_result_count }}
@@ -23,7 +23,7 @@
           </span>
         </a-divider>
 
-        <a-input-search :placeholder="placeholder" name="{{ search_var }}" v-model="searchInput">
+        <a-input-search placeholder="{{ search_placeholder }}" name="{{ search_var }}" default-value="{{ search_value }}">
           <a-button html-type="submit" type="primary" slot="enterButton">{% trans 'Search' %}</a-button>
         </a-input-search>
         {% for pair in cl.params.items %}

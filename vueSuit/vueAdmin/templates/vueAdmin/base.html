@@ -1,4 +1,4 @@
-{% load i18n static vuetags %}
+{% load i18n static vueAdmin_sets %}
 {% get_current_language as LANGUAGE_CODE %}
 {% get_current_language_bidi as LANGUAGE_BIDI %}
 
@@ -10,7 +10,7 @@
   {# site header section #}
 
   {# can replace whole site stylesheet section #}
-  <link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% static 'web/css/themes/default.css' %}{% endblock %}">
+  <link rel="stylesheet" type="text/css" href="{% block stylesheet %}{% static 'vueAdmin/css/themes/default.css' %}{% endblock %}">
   {# can replace whole site stylesheet section #}
 
   {# site stylesheet section #}
@@ -38,7 +38,11 @@
 </head>
 
 <body>
-  {% block x-template %}{% endblock %}
+  {# template load section #}
+  {% block x-template %}
+
+  {% endblock %}
+  {# template load section #}
 
   <div id="app">
     {# site application section #}
@@ -69,8 +73,12 @@
     {# site application section #}
   </div>
 
+  {# application javascript section #}
   {% block scripts %}
-    <script src="{% static 'web/js/index.js' %}"></script>
+
   {% endblock %}
+  {# application javascript section #}
+
+  <script src="{% static 'vueAdmin/js/index.js' %}"></script>
 </body>
 </html>

@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'vueSuit.vueAdmin',
     'vueSuit.vueForms',
-    'vueSuit.vuePacks'
+    'vueSuit.vuePacks',
+    'app'
 ]
 
 MIDDLEWARE = [

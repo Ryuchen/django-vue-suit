@@ -1,11 +1,11 @@
-<script type="text/x-template" id="home-iframe-content">
+<template id="suit-iframe">
   <div :style="contentStyle">
     <iframe :src="href" :style="iframeStyle" frameborder="0"></iframe>
   </div>
-</script>
+</template>
 
-<script type="text/javascript">
-  Vue.component('iframe-wrapper', {
+<script type="application/javascript">
+  Vue.component('suit-iframe', {
     delimiters: ['<%', '%>'],
     props: {
       href: {
@@ -27,7 +27,7 @@
         required: false
       }
     },
-    template: '#home-iframe-content',
+    template: '#suit-iframe',
     data() {
       return {
         contentStyle: {

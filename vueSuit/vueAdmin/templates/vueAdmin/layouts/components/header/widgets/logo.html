@@ -1,4 +1,4 @@
-{% load i18n vuetags %}
+{% load i18n vueAdmin_sets %}
 
 <script type="text/x-template" id="demo-header-logo">
   <div :style="logoWrapperStyle">
@@ -16,7 +16,7 @@
     delimiters: ['<%', '%>'],
     template: '#demo-header-logo',
     data: function () {
-      const logo = JSON.parse(`{% adv_logo %}`);
+      const logo = JSON.parse(`{% vue_logo %}`);
       return {
         width: '200px',
         src: logo,

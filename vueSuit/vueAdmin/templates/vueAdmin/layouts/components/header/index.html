@@ -1,12 +1,12 @@
-{% load i18n static vuetags %}
+{% load i18n static vueAdmin_sets %}
 
-{% include 'admin/layouts/components/header/widgets/logo.html' %}
-{% include 'admin/layouts/components/header/widgets/search.html' %}
-{% include 'admin/layouts/components/header/widgets/notice.html' %}
-{% include 'admin/layouts/components/header/widgets/utility.html' %}
-{% include 'admin/layouts/components/header/widgets/setting.html' %}
+{% include 'vueAdmin/layouts/components/header/widgets/logo.html' %}
+{% include 'vueAdmin/layouts/components/header/widgets/search.html' %}
+{% include 'vueAdmin/layouts/components/header/widgets/notice.html' %}
+{% include 'vueAdmin/layouts/components/header/widgets/utility.html' %}
+{% include 'vueAdmin/layouts/components/header/widgets/setting.html' %}
 
-<link href="{% static 'web/css/layouts/components/widgets/header/toolbox.css' %}" rel="stylesheet">
+<link href="{% static 'vueAdmin/css/layouts/components/widgets/header/toolbox.css' %}" rel="stylesheet">
 
 <script type="text/x-template" id="demo-header">
   <a-layout-header :style="{ padding: '0' }">
@@ -53,7 +53,7 @@
     template: '#demo-header',
     data: function () {
       return {
-        toolbox: JSON.parse(`{% adv_toolbox %}`),
+        toolbox: JSON.parse(`{% vue_toolbox %}`),
         toolboxIconStyle: {
           fontSize: '16px',
           padding: '4px'

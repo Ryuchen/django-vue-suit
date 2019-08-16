@@ -197,7 +197,7 @@ class AdminReadonlyField:
         return format_html('<label{}>{}:</label>', flatatt(attrs), capfirst(label))
 
     def contents(self):
-        from django.contrib.admin.templatetags.admin_list import _boolean_icon
+        from .templatetags.admin_list import _boolean_icon
         field, obj, model_admin = self.field['field'], self.form.instance, self.model_admin
         try:
             f, attr, value = lookup_field(field, obj, model_admin)

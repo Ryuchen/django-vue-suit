@@ -1,1 +1,1 @@
-{% include "django/forms/widgets/input.html" %}
+<a-time-picker name="{{ widget.name }}" {% if widget.value != None %}v-model="{{ widget.value|stringformat:'s' }}"{% endif %} {% include "vueForms/widgets/attrs.html" %} />

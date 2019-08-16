@@ -1,1 +1,7 @@
-{% include "django/forms/widgets/input.html" %}
+{% load i18n %}
+
+<a-upload name="file">
+  <a-button>
+    <a-icon type="upload" />{% trans "Click to Upload" %}
+  </a-button>
+</a-upload>

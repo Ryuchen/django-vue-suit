@@ -1,5 +1,5 @@
-{% extends "admin/base.html" %}
-{% load i18n static vuetags %}
+{% extends "vueAdmin/base.html" %}
+{% load i18n static vueAdmin_sets %}
 
 {# appliaction site information #}
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
@@ -7,14 +7,17 @@
 
 {# site javascript section #}
 {% block javascript %}
-  <script src="{% static 'web/thirds/es6promise/es6-promise.auto.js' %}"></script>
-  <script src="{% static 'web/thirds/g2/g2.min.js' %}"></script>
-  <script src="{% static 'web/thirds/axios/axios.js' %}"></script>
-  <script src="{% static 'web/thirds/moment/moment.min.js' %}"></script>
-  <script src="{% static 'web/thirds/jspdf/jspdf.debug.js' %}"></script>
-  <script src="{% static 'web/thirds/html2canvas/html2canvas.js' %}"></script>
-  <script src="{% static 'web/thirds/vue/vue.js' %}"></script>
-  <script src="{% static 'web/thirds/vuex/vuex.min.js' %}"></script>
-  <script src="{% static 'web/thirds/ant-design-vue/dist/antd.min.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/es6promise/es6-promise.auto.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/g2/g2.min.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/axios/axios.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/moment/moment.min.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/jspdf/jspdf.debug.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/html2canvas/html2canvas.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/vue/vue.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/vuex/vuex.min.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/ant-design-vue/dist/antd.min.js' %}"></script>
+  <script src="{% static 'vueAdmin/vendor/jscookie/js.cookie.js' %}"></script>
+  <!-- Customize django vueSuit mixin function for global -->
+  <script src="{% static 'vueAdmin/js/mixin.js' %}"></script>
 {% endblock %}
 {# site javascript section #}

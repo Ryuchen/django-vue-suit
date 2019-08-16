@@ -7,6 +7,7 @@
 Django Ant Design Vue form handling.
 """
 
+from django.core.exceptions import ValidationError  # NOQA
 from .boundfield import *  # NOQA
 from .fields import *  # NOQA
 from .forms import *  # NOQA

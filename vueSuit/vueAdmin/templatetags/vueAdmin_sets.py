@@ -1,28 +1,255 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# ==================================================
+# @Time : 2019-08-04 00:29
+# @Author : ryuchen
+# @File : vuetags.py
+# @Desc :
+# ==================================================
+import os
+import re
+import json
 import datetime
 
+from django import template
+from django.conf import settings
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
-from django.contrib.admin.utils import (
-    display_for_field, display_for_value, label_for_field, lookup_field,
-)
+from django.contrib.admin.utils import label_for_field, lookup_field, display_for_value, display_for_field
+from django.core.exceptions import ObjectDoesNotExist
+from django.templatetags.static import static
+from django.urls import NoReverseMatch
+from django.utils.encoding import force_text
+from django.utils.functional import Promise
+from django.core.serializers.json import DjangoJSONEncoder
+from django.contrib.admin.templatetags.base import InclusionAdminNode
+
 from django.contrib.admin.views.main import (
     ALL_VAR, ORDER_VAR, PAGE_VAR, SEARCH_VAR,
 )
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.template import Library
-from django.template.loader import get_template
-from django.templatetags.static import static
-from django.urls import NoReverseMatch
 from django.utils import formats
-from django.utils.html import format_html
+from django.utils.html import format_html, _strip_once, strip_tags
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 
-from .base import InclusionAdminNode
+register = template.Library()
 
-register = Library()
 
+def unicode_to_str(u):
+    return u.encode()
+
+
+def _field_display(model, field_name):
+    for f in model._meta.fields:
+        if f.name == field_name:
+            if hasattr(f, 'verbose_name'):
+                return getattr(f, 'verbose_name')
+
+    return field_name
+
+
+def __get_config(name):
+    value = os.environ.get(name, getattr(settings, name, None))
+    return value
+
+
+def _import_reload(_modules):
+    _obj = __import__(_modules, fromlist=_modules.split('.'))
+    return _obj
+
+
+class LazyEncoder(DjangoJSONEncoder):
+    """
+    解决json __proxy__ 问题
+    """
+
+    def default(self, obj):
+        if isinstance(obj, Promise):
+            return force_text(obj)
+        return super(LazyEncoder, self).default(obj)
+
+
+@register.simple_tag
+def vue_logo():
+    logo = {
+        "full": {
+            "src": ""
+        },
+        "mini": {
+            "src": "",
+        },
+        "alt": "logo"
+    }
+    logo["full"]["src"] = __get_config('VUEADMIN_HEADER_LOGOFULL')
+    logo["mini"]["src"] = __get_config('VUEADMIN_HEADER_LOGOMINI')
+
+    if logo["full"]["src"] is None:
+        logo["full"]["src"] = settings.STATIC_URL + "vueAdmin/img/logo-full.png"
+
+    if logo["mini"]["src"] is None:
+        logo["mini"]["src"] = settings.STATIC_URL + "vueAdmin/img/logo-mini.png"
+
+    return mark_safe(json.dumps(logo, cls=LazyEncoder))
+
+
+@register.simple_tag
+def vue_toolbox():
+    toolbox = {
+        "lock": {
+            "enable": True,
+            "verify": "email"
+        },
+        "github": {
+            "enable": True,
+            "link": "https://github.com/ryuchen"
+        },
+        "search": {
+            "enable": True
+        },
+        "notice": {
+            "enable": True
+        },
+        "utility": {
+            "enable": True
+        },
+        "setting": {
+            "enable": True
+        }
+    }
+    if __get_config('VUEADMIN_HEADER_TOOLBOX_LOCK') is not None:
+        toolbox["lock"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_LOCK')
+    if __get_config('VUEADMIN_HEADER_TOOLBOX_GITHUB') is not None:
+        toolbox["github"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_GITHUB')
+    if __get_config('GITHUB_URL') is not None:
+        toolbox["github"]["link"] = __get_config('GITHUB_URL')
+    if __get_config('VUEADMIN_HEADER_TOOLBOX_SEARCH') is not None:
+        toolbox["search"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_SEARCH')
+    if __get_config('VUEADMIN_HEADER_TOOLBOX_NOTICE') is not None:
+        toolbox["notice"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_NOTICE')
+    if __get_config('VUEADMIN_HEADER_TOOLBOX_UTILITY') is not None:
+        toolbox["utility"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_UTILITY')
+    if __get_config('VUEADMIN_HEADER_TOOLBOX_SETTING') is not None:
+        toolbox["setting"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_SETTING')
+    return mark_safe(json.dumps(toolbox, cls=LazyEncoder))
+
+
+@register.simple_tag
+def vue_home():
+    home = {
+        "type": "Workplace",
+        "title": "Workplace",
+        "url": ""
+    }
+    home_type = __get_config('VUEADMIN_HOME_TYPE')
+    if home_type is not None:
+        home["type"] = home_type
+        if home["type"] in ["Workplace", "Overview"]:
+            home["title"] = home_type
+
+        if home["type"] == "Customize":
+            home["title"] = __get_config('VUEADMIN_HOME_TITLE')
+            home["url"] = __get_config('VUEADMIN_HOME_URL')
+
+    return mark_safe(json.dumps(home, cls=LazyEncoder))
+
+
+@register.simple_tag(takes_context=True)
+def vue_menu(context):
+    data = []
+
+    menus = __get_config('ANT_DESIGN_VUE_NAV_MENUS')
+    if menus:  # if user define site menus use defines!
+        if __get_config('ANT_DESIGN_VUE_NAV_MENUS_DYNAMIC'):
+            menus = _import_reload(__get_config('DJANGO_SETTINGS_MODULE')).ANT_DESIGN_VUE_NAV_MENUS
+        key_start = 1
+        for menu in menus:
+            if "models" in menu and menu["models"]:
+                menu["key"] = "sub{}".format(key_start)
+                for model in menu["models"]:
+                    key_start += 1
+                    model["key"] = "{}".format(key_start)
+            else:
+                key_start += 1
+                menu["key"] = "{}".format(key_start)
+        data = menus
+    else:  # if user not define site menus use default!
+        app_list = context.get('app_list')
+        for app in app_list:
+            _models = [
+                {
+                    'name': m.get('name'),
+                    'icon': '',
+                    'url': m.get('admin_url'),
+                }
+                for m in app.get('models')
+            ] if app.get('models') else []
+
+            module = {
+                'name': app.get('name'),
+                'icon': '',
+                'models': _models
+            }
+            data.append(module)
+
+    return mark_safe(json.dumps(data, cls=LazyEncoder))
+
+
+@register.simple_tag
+def vue_footer():
+    footer = {
+        "author": "Ryuchen",
+        "year": datetime.datetime.now().year,
+        "link": "https://github.com/ryuchen"
+    }
+    year = __get_config('VUEADMIN_FOOTER_COPYRIGHT_YEAR')
+    if year is not None:
+        footer["year"] = year
+
+    author = __get_config('VUEADMIN_FOOTER_COPYRIGHT_AUTHOR')
+    if author is not None:
+        footer["author"] = author
+
+    link = __get_config('VUEADMIN_FOOTER_COPYRIGHT_LINK')
+    if link is not None:
+        footer["link"] = link
+
+    return mark_safe(json.dumps(footer, cls=LazyEncoder))
+
+
+@register.simple_tag(takes_context=True)
+def adv_search_placeholder(context):
+    cl = context.get('cl')
+    verboses = []
+
+    # 取消递归，只获取2级
+    if cl:
+        for sf in cl.search_fields:
+            verboses.append(_field_display(cl.model, sf))
+
+    return mark_safe("，".join(verboses))
+
+
+@register.simple_tag
+def adv_list_filter(cl, spec):
+    list_filter = {
+        'title': spec.title,
+        'choices': list(spec.choices(cl)),
+    }
+    return mark_safe(json.dumps(list_filter, cls=LazyEncoder))
+
+
+@register.filter
+def config(key):
+    return __get_config(key)
+
+
+@register.filter
+def vue_debug(value):
+    return value
+
+
+# ############################## overwrite django admin default tags ################################
 DOT = '.'
 
 
@@ -44,62 +271,18 @@ def paginator_number(cl, i):
         )
 
 
-def pagination(cl):
+@register.simple_tag(name='adv_pagination')
+def pagination_tag(cl):
     """
     Generate the series of links to the pages in a paginated list.
     """
     paginator, page_num = cl.paginator, cl.page_num
-
-    pagination_required = (not cl.show_all or not cl.can_show_all) and cl.multi_page
-    if not pagination_required:
-        page_range = []
-    else:
-        ON_EACH_SIDE = 3
-        ON_ENDS = 2
-
-        # If there are 10 or fewer pages, display links to every page.
-        # Otherwise, do some fancy
-        if paginator.num_pages <= 10:
-            page_range = range(paginator.num_pages)
-        else:
-            # Insert "smart" pagination links, so that there are always ON_ENDS
-            # links at either end of the list of pages, and there are always
-            # ON_EACH_SIDE links at either end of the "current page" link.
-            page_range = []
-            if page_num > (ON_EACH_SIDE + ON_ENDS):
-                page_range += [
-                    *range(0, ON_ENDS), DOT,
-                    *range(page_num - ON_EACH_SIDE, page_num + 1),
-                ]
-            else:
-                page_range.extend(range(0, page_num + 1))
-            if page_num < (paginator.num_pages - ON_EACH_SIDE - ON_ENDS - 1):
-                page_range += [
-                    *range(page_num + 1, page_num + ON_EACH_SIDE + 1), DOT,
-                    *range(paginator.num_pages - ON_ENDS, paginator.num_pages)
-                ]
-            else:
-                page_range.extend(range(page_num + 1, paginator.num_pages))
-
-    need_show_all_link = cl.can_show_all and not cl.show_all and cl.multi_page
-    return {
-        'cl': cl,
-        'pagination_required': pagination_required,
-        'show_all_url': need_show_all_link and cl.get_query_string({ALL_VAR: ''}),
-        'page_range': page_range,
-        'ALL_VAR': ALL_VAR,
-        '1': 1,
-    }
-
-
-@register.tag(name='pagination')
-def pagination_tag(parser, token):
-    return InclusionAdminNode(
-        parser, token,
-        func=pagination,
-        template_name='pagination.html',
-        takes_context=False,
-    )
+    return mark_safe(json.dumps({
+        'current': page_num,
+        'total': paginator.count,
+        'link': cl.get_query_string({PAGE_VAR: page_num}),
+        'size': 20
+    }))
 
 
 def result_headers(cl):
@@ -120,11 +303,6 @@ def result_headers(cl):
 
             # if the field is the action checkbox: no sorting and special class
             if field_name == 'action_checkbox':
-                yield {
-                    "text": text,
-                    "class_attrib": mark_safe(' class="action-checkbox-column"'),
-                    "sortable": False,
-                }
                 continue
 
             admin_order_field = getattr(attr, "admin_order_field", None)
@@ -135,7 +313,6 @@ def result_headers(cl):
             # Not sortable
             yield {
                 'text': text,
-                'class_attrib': format_html(' class="column-{}"', field_name),
                 'sortable': False,
             }
             continue
@@ -179,15 +356,14 @@ def result_headers(cl):
             o_list_primary.insert(0, make_qs_param(new_order_type, i))
 
         yield {
-            "text": text,
-            "sortable": True,
-            "sorted": is_sorted,
+            "title": text,
+            "dataIndex": text,
+            "sorter": True,
             "ascending": order_type == "asc",
             "sort_priority": sort_priority,
             "url_primary": cl.get_query_string({ORDER_VAR: '.'.join(o_list_primary)}),
             "url_remove": cl.get_query_string({ORDER_VAR: '.'.join(o_list_remove)}),
             "url_toggle": cl.get_query_string({ORDER_VAR: '.'.join(o_list_toggle)}),
-            "class_attrib": format_html(' class="{}"', ' '.join(th_classes)) if th_classes else '',
         }
 
 
@@ -221,7 +397,7 @@ def items_for_result(cl, result, form):
         return field_name in cl.list_display_links
 
     first = True
-    pk = cl.lookup_opts.pk.attname
+    pk = cl.lookup_opts.pk.attname  # primary key
     for field_index, field_name in enumerate(cl.list_display):
         empty_value_display = cl.model_admin.get_empty_value_display()
         row_classes = ['field-%s' % _coerce_field_name(field_name, field_index)]
@@ -290,9 +466,9 @@ def items_for_result(cl, result, form):
                     form[cl.model._meta.pk.name].is_hidden)):
                 bf = form[field_name]
                 result_repr = mark_safe(str(bf.errors) + str(bf))
-            yield format_html('<td{}>{}</td>', row_class, result_repr)
+            yield format_html('{}', result_repr)
     if form and not form[cl.model._meta.pk.name].is_hidden:
-        yield format_html('<td>{}</td>', form[cl.model._meta.pk.name])
+        yield format_html('{}', form[cl.model._meta.pk.name])
 
 
 class ResultList(list):
@@ -301,6 +477,7 @@ class ResultList(list):
     with the form object for error reporting purposes. Needed to maintain
     backwards compatibility with existing admin templates.
     """
+
     def __init__(self, form, *items):
         self.form = form
         super().__init__(*items)
@@ -322,164 +499,19 @@ def result_hidden_fields(cl):
                 yield mark_safe(form[cl.model._meta.pk.name])
 
 
+@register.simple_tag(name='adv_result_header')
+def result_header(cl):
+    """
+    Display the headers.
+    """
+    return mark_safe(json.dumps(list(result_headers(cl))))
+
+
+@register.simple_tag(name='adv_result_list')
 def result_list(cl):
     """
-    Display the headers and data list together.
+    Display data list.
     """
-    headers = list(result_headers(cl))
-    num_sorted_fields = 0
-    for h in headers:
-        if h['sortable'] and h['sorted']:
-            num_sorted_fields += 1
-    return {
-        'cl': cl,
-        'result_hidden_fields': list(result_hidden_fields(cl)),
-        'result_headers': headers,
-        'num_sorted_fields': num_sorted_fields,
-        'results': list(results(cl)),
-    }
+    return mark_safe(json.dumps(list(results(cl))))
 
-
-@register.tag(name='result_list')
-def result_list_tag(parser, token):
-    return InclusionAdminNode(
-        parser, token,
-        func=result_list,
-        template_name='change_list_results.html',
-        takes_context=False,
-    )
-
-
-def date_hierarchy(cl):
-    """
-    Display the date hierarchy for date drill-down functionality.
-    """
-    if cl.date_hierarchy:
-        field_name = cl.date_hierarchy
-        year_field = '%s__year' % field_name
-        month_field = '%s__month' % field_name
-        day_field = '%s__day' % field_name
-        field_generic = '%s__' % field_name
-        year_lookup = cl.params.get(year_field)
-        month_lookup = cl.params.get(month_field)
-        day_lookup = cl.params.get(day_field)
-
-        def link(filters):
-            return cl.get_query_string(filters, [field_generic])
-
-        if not (year_lookup or month_lookup or day_lookup):
-            # select appropriate start level
-            date_range = cl.queryset.aggregate(first=models.Min(field_name),
-                                               last=models.Max(field_name))
-            if date_range['first'] and date_range['last']:
-                if date_range['first'].year == date_range['last'].year:
-                    year_lookup = date_range['first'].year
-                    if date_range['first'].month == date_range['last'].month:
-                        month_lookup = date_range['first'].month
-
-        if year_lookup and month_lookup and day_lookup:
-            day = datetime.date(int(year_lookup), int(month_lookup), int(day_lookup))
-            return {
-                'show': True,
-                'back': {
-                    'link': link({year_field: year_lookup, month_field: month_lookup}),
-                    'title': capfirst(formats.date_format(day, 'YEAR_MONTH_FORMAT'))
-                },
-                'choices': [{'title': capfirst(formats.date_format(day, 'MONTH_DAY_FORMAT'))}]
-            }
-        elif year_lookup and month_lookup:
-            days = getattr(cl.queryset, 'dates')(field_name, 'day')
-            return {
-                'show': True,
-                'back': {
-                    'link': link({year_field: year_lookup}),
-                    'title': str(year_lookup)
-                },
-                'choices': [{
-                    'link': link({year_field: year_lookup, month_field: month_lookup, day_field: day.day}),
-                    'title': capfirst(formats.date_format(day, 'MONTH_DAY_FORMAT'))
-                } for day in days]
-            }
-        elif year_lookup:
-            months = getattr(cl.queryset, 'dates')(field_name, 'month')
-            return {
-                'show': True,
-                'back': {
-                    'link': link({}),
-                    'title': _('All dates')
-                },
-                'choices': [{
-                    'link': link({year_field: year_lookup, month_field: month.month}),
-                    'title': capfirst(formats.date_format(month, 'YEAR_MONTH_FORMAT'))
-                } for month in months]
-            }
-        else:
-            years = getattr(cl.queryset, 'dates')(field_name, 'year')
-            return {
-                'show': True,
-                'back': None,
-                'choices': [{
-                    'link': link({year_field: str(year.year)}),
-                    'title': str(year.year),
-                } for year in years]
-            }
-
-
-@register.tag(name='date_hierarchy')
-def date_hierarchy_tag(parser, token):
-    return InclusionAdminNode(
-        parser, token,
-        func=date_hierarchy,
-        template_name='date_hierarchy.html',
-        takes_context=False,
-    )
-
-
-def search_form(cl):
-    """
-    Display a search form for searching the list.
-    """
-    return {
-        'cl': cl,
-        'show_result_count': cl.result_count != cl.full_result_count,
-        'search_var': SEARCH_VAR
-    }
-
-
-@register.tag(name='search_form')
-def search_form_tag(parser, token):
-    return InclusionAdminNode(parser, token, func=search_form, template_name='search_form.html', takes_context=False)
-
-
-@register.simple_tag
-def admin_list_filter(cl, spec):
-    tpl = get_template(spec.template)
-    return tpl.render({
-        'title': spec.title,
-        'choices': list(spec.choices(cl)),
-        'spec': spec,
-    })
-
-
-def admin_actions(context):
-    """
-    Track the number of times the action field has been rendered on the page,
-    so we know which value to use.
-    """
-    context['action_index'] = context.get('action_index', -1) + 1
-    return context
-
-
-@register.tag(name='admin_actions')
-def admin_actions_tag(parser, token):
-    return InclusionAdminNode(parser, token, func=admin_actions, template_name='actions.html')
-
-
-@register.tag(name='change_list_object_tools')
-def change_list_object_tools_tag(parser, token):
-    """Display the row of change list object tools."""
-    return InclusionAdminNode(
-        parser, token,
-        func=lambda context: context,
-        template_name='change_list_object_tools.html',
-    )
+# ############################## overwrite django admin default tags ################################

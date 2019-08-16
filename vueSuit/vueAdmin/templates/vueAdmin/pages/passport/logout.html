@@ -1,0 +1,20 @@
+{% extends "vueAdmin/base_site.html" %}
+{% load i18n static %}
+
+{# site stylesheet section #}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/pages/passport.css" %}">
+{% endblock %}
+{# site stylesheet section #}
+
+{% block app %}
+  <div id="passport-container">
+    <a-alert message="{% trans 'Successful Logged Out' %}" type="info">
+      <div slot="description">
+        <p>{% trans "Thanks for spending some quality time with the Web site today." %}</p>
+        <p><a href="{% url 'admin:login' %}">{% trans 'Log in again' %}</a></p>
+      </div>
+    </a-alert>
+  </div>
+{% endblock %}

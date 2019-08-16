@@ -1,0 +1,28 @@
+{% extends "vueAdmin/base_site.html" %}
+{% load i18n static %}
+
+{# site stylesheet section #}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/pages/exception.css" %}">
+{% endblock %}
+{# site stylesheet section #}
+
+{% block app %}
+  <div id="exception-container">
+    <a-alert message="{% trans 'Server Error' %}" type="error">
+      <div slot="description">
+        <p>{% trans "Something's wrong with your database installation. Make sure the appropriate database tables have been created, and make sure the database is readable by the appropriate user." %}</p>
+        <p><a href="{% url 'admin:index' %}">{% trans 'Go Back' %}</a></p>
+      </div>
+    </a-alert>
+    <div class="exception-img"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script type="text/javascript">
+    window.mixins = {};
+  </script>
+  {{ block.super }}
+{% endblock %}

@@ -5,8 +5,9 @@ from django.apps import apps
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models.base import ModelBase
-from django.http import Http404, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
+
 from django.urls import NoReverseMatch, reverse
 from django.utils.functional import LazyObject
 from django.utils.module_loading import import_string
@@ -17,6 +18,8 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.i18n import JavaScriptCatalog
 
 from . import ModelAdmin
+from .settings import VueAdminSettings
+
 
 all_sites = WeakSet()
 
@@ -52,11 +55,16 @@ class AdminSite:
 
     _empty_value_display = '-'
 
-    login_form = None
     index_template = None
     app_index_template = None
+
+    login_form = None
     login_template = None
     logout_template = None
+    password_reset_form = None
+    password_reset_template = None
+    password_reset_done_template = None
+    password_change_form = None
     password_change_template = None
     password_change_done_template = None
 
@@ -65,6 +73,7 @@ class AdminSite:
         self._registry = {}  # model_class class -> admin_class instance
         self._actions = {}
         self._global_actions = self._actions.copy()
+        self._settings = VueAdminSettings()
         all_sites.add(self)
 
     def check(self, app_configs):
@@ -179,7 +188,8 @@ class AdminSite:
     def empty_value_display(self, empty_value_display):
         self._empty_value_display = empty_value_display
 
-    def has_permission(self, request):
+    @staticmethod
+    def has_permission(request):
         """
         Return True if the given HttpRequest has permission to view
         *at least one* page in the admin site.
@@ -231,7 +241,7 @@ class AdminSite:
         return update_wrapper(inner, view)
 
     def get_urls(self):
-        from django.urls import include, path, re_path
+        from django.urls import include, path
         # Since this module gets imported in the application's root package,
         # it cannot import models from other applications at the module level,
         # and django.contrib.contenttypes.views imports ContentType.
@@ -247,9 +257,12 @@ class AdminSite:
             path('', wrap(self.index), name='index'),
             path('login/', self.login, name='login'),
             path('logout/', wrap(self.logout), name='logout'),
+            path('password_reset/', self.password_reset, name='password_reset'),
+            path('password_reset_done/', self.password_reset_done, name='password_reset_done'),
             path('password_change/', wrap(self.password_change, cacheable=True), name='password_change'),
             path('password_change/done/', wrap(self.password_change_done, cacheable=True), name='password_change_done'),
             path('jsi18n/', wrap(self.i18n_javascript, cacheable=True), name='jsi18n'),
+            path('dashboard', wrap(self.dashboard, cacheable=True), name='dashboard'),
         ]
 
         # Add in each model's views, and create a list of valid URLS for the
@@ -262,13 +275,6 @@ class AdminSite:
             if model._meta.app_label not in valid_app_labels:
                 valid_app_labels.append(model._meta.app_label)
 
-        # If there were ModelAdmins registered, we should have a list of app
-        # labels for which we need to allow access to the app_index view,
-        if valid_app_labels:
-            regex = r'^(?P<app_label>' + '|'.join(valid_app_labels) + ')/$'
-            urlpatterns += [
-                re_path(regex, wrap(self.app_index), name='app_list'),
-            ]
         return urlpatterns
 
     @property
@@ -293,101 +299,6 @@ class AdminSite:
             'available_apps': self.get_app_list(request),
             'is_popup': False,
         }
-
-    def password_change(self, request, extra_context=None):
-        """
-        Handle the "change password" task -- both form display and validation.
-        """
-        from django.contrib.admin.forms import AdminPasswordChangeForm
-        from django.contrib.auth.views import PasswordChangeView
-        url = reverse('admin:password_change_done', current_app=self.name)
-        defaults = {
-            'form_class': AdminPasswordChangeForm,
-            'success_url': url,
-            'extra_context': {**self.each_context(request), **(extra_context or {})},
-        }
-        if self.password_change_template is not None:
-            defaults['template_name'] = self.password_change_template
-        request.current_app = self.name
-        return PasswordChangeView.as_view(**defaults)(request)
-
-    def password_change_done(self, request, extra_context=None):
-        """
-        Display the "success" page after a password change.
-        """
-        from django.contrib.auth.views import PasswordChangeDoneView
-        defaults = {
-            'extra_context': {**self.each_context(request), **(extra_context or {})},
-        }
-        if self.password_change_done_template is not None:
-            defaults['template_name'] = self.password_change_done_template
-        request.current_app = self.name
-        return PasswordChangeDoneView.as_view(**defaults)(request)
-
-    def i18n_javascript(self, request, extra_context=None):
-        """
-        Display the i18n JavaScript that the Django admin requires.
-
-        `extra_context` is unused but present for consistency with the other
-        admin views.
-        """
-        return JavaScriptCatalog.as_view(packages=['django.contrib.admin'])(request)
-
-    @never_cache
-    def logout(self, request, extra_context=None):
-        """
-        Log out the user for the given HttpRequest.
-
-        This should *not* assume the user is already logged in.
-        """
-        from django.contrib.auth.views import LogoutView
-        defaults = {
-            'extra_context': {
-                **self.each_context(request),
-                # Since the user isn't logged out at this point, the value of
-                # has_permission must be overridden.
-                'has_permission': False,
-                **(extra_context or {})
-            },
-        }
-        if self.logout_template is not None:
-            defaults['template_name'] = self.logout_template
-        request.current_app = self.name
-        return LogoutView.as_view(**defaults)(request)
-
-    @never_cache
-    def login(self, request, extra_context=None):
-        """
-        Display the login form for the given HttpRequest.
-        """
-        if request.method == 'GET' and self.has_permission(request):
-            # Already logged-in, redirect to admin index
-            index_path = reverse('admin:index', current_app=self.name)
-            return HttpResponseRedirect(index_path)
-
-        from django.contrib.auth.views import LoginView
-        # Since this module gets imported in the application's root package,
-        # it cannot import models from other applications at the module level,
-        # and django.contrib.admin.forms eventually imports User.
-        from django.contrib.admin.forms import AdminAuthenticationForm
-        context = {
-            **self.each_context(request),
-            'title': _('Log in'),
-            'app_path': request.get_full_path(),
-            'username': request.user.get_username(),
-        }
-        if (REDIRECT_FIELD_NAME not in request.GET and
-                REDIRECT_FIELD_NAME not in request.POST):
-            context[REDIRECT_FIELD_NAME] = reverse('admin:index', current_app=self.name)
-        context.update(extra_context or {})
-
-        defaults = {
-            'extra_context': context,
-            'authentication_form': self.login_form or AdminAuthenticationForm,
-            'template_name': self.login_template or 'admin/login.html',
-        }
-        request.current_app = self.name
-        return LoginView.as_view(**defaults)(request)
 
     def _build_app_dict(self, request, label=None):
         """
@@ -422,10 +333,15 @@ class AdminSite:
             model_dict = {
                 'name': capfirst(model._meta.verbose_name_plural),
                 'object_name': model._meta.object_name,
+                'icon': '',
                 'perms': perms,
                 'admin_url': None,
                 'add_url': None,
             }
+
+            if hasattr(model, 'vueAdmin_icon'):
+                model_dict['icon'] = model.vueAdmin_icon()
+
             if perms.get('change') or perms.get('view'):
                 model_dict['view_only'] = not perms.get('change')
                 try:
@@ -443,16 +359,11 @@ class AdminSite:
             else:
                 app_dict[app_label] = {
                     'name': apps.get_app_config(app_label).verbose_name,
+                    'icon': apps.get_app_config(app_label).vueAdmin_icon,
                     'app_label': app_label,
-                    'app_url': reverse(
-                        'admin:app_list',
-                        kwargs={'app_label': app_label},
-                        current_app=self.name,
-                    ),
                     'has_module_perms': has_module_perms,
                     'models': [model_dict],
                 }
-
         if label:
             return app_dict.get(label)
         return app_dict
@@ -490,29 +401,156 @@ class AdminSite:
 
         request.current_app = self.name
 
-        return TemplateResponse(request, self.index_template or 'vueAdmin/index.html', context)
+        return TemplateResponse(request, self.index_template or 'vueAdmin/pages/index.html', context)
 
-    def app_index(self, request, app_label, extra_context=None):
-        app_dict = self._build_app_dict(request, app_label)
-        if not app_dict:
-            raise Http404('The requested admin page does not exist.')
-        # Sort the models alphabetically within each app.
-        app_dict['models'].sort(key=lambda x: x['name'])
-        app_name = apps.get_app_config(app_label).verbose_name
+    def dashboard(self, request, extra_context=None):
+        """
+        Log in dashboard display for the setting home page type
+        :param request:
+        :param extra_context:
+        :return:
+        """
+        app_list = self.get_app_list(request)
+
+        from .views.views import DashboardWorkPlaceView, DashboardOverviewView
         context = {
             **self.each_context(request),
-            'title': _('%(app)s administration') % {'app': app_name},
-            'app_list': [app_dict],
-            'app_label': app_label,
-            **(extra_context or {}),
+            'app_list': app_list,
+            **(extra_context or {})
         }
-
+        # No display form
+        defaults = {
+            'extra_context': context,
+        }
         request.current_app = self.name
 
-        return TemplateResponse(request, self.app_index_template or [
-            'admin/%s/app_index.html' % app_label,
-            'admin/app_index.html'
-        ], context)
+        dashboard = self._settings.get_config("VUEADMIN_HOME_TYPE")
+        if dashboard == "Workplace":
+            return DashboardWorkPlaceView.as_view(**defaults)(request)
+        else:
+            return DashboardOverviewView.as_view(**defaults)(request)
+
+    @never_cache
+    def login(self, request, extra_context=None):
+        """
+        Display the login form for the given HttpRequest.
+        """
+        if request.method == 'GET' and self.has_permission(request):
+            # Already logged-in, redirect to admin index
+            index_path = reverse('admin:index', current_app=self.name)
+            return HttpResponseRedirect(index_path)
+
+        from django.contrib.auth.views import LoginView  # Django Auth View
+        context = {
+            **self.each_context(request),
+            'title': _('Log in'),
+            'app_path': request.get_full_path(),
+            'username': request.user.get_username(),
+        }
+        if REDIRECT_FIELD_NAME not in request.GET and REDIRECT_FIELD_NAME not in request.POST:
+            context[REDIRECT_FIELD_NAME] = reverse('admin:index', current_app=self.name)
+        context.update(extra_context or {})
+
+        from .forms import AdminAuthenticationForm  # Define AdminAuthenticationForm
+        defaults = {
+            'extra_context': context,
+            'form_class': self.login_form or AdminAuthenticationForm,
+            'template_name': self.login_template or 'vueAdmin/pages/passport/login.html',
+        }
+        request.current_app = self.name
+        return LoginView.as_view(**defaults)(request)
+
+    @never_cache
+    def logout(self, request, extra_context=None):
+        """
+        Log out the user for the given HttpRequest.
+        This should *not* assume the user is already logged in.
+        """
+        from django.contrib.auth.views import LogoutView
+        context = {
+            **self.each_context(request),
+            'title': _('Log out'),
+            # Since the user isn't logged out at this point, the value of
+            # has_permission must be overridden.
+            'has_permission': False,
+            **(extra_context or {})
+        }
+        # No display form
+        defaults = {
+            'extra_context': context,
+            'template_name': self.logout_template or 'vueAdmin/pages/passport/logout.html',
+        }
+        request.current_app = self.name
+        return LogoutView.as_view(**defaults)(request)
+
+    def password_reset(self, request, extra_context=None):
+        """
+        Handle the "reset password" task -- both form display and validation.
+        """
+        from django.contrib.auth.views import PasswordResetView
+        context = {
+            **self.each_context(request),
+            'title': _('Password reset'),
+            **(extra_context or {})
+        }
+        from .forms import PasswordResetForm
+        url = reverse('admin:password_reset_done', current_app=self.name)
+        defaults = {
+            'extra_context': context,
+            'form_class': self.password_reset_form or PasswordResetForm,
+            'success_url': url,
+            'template_name': self.password_reset_template or 'vueAdmin/pages/passport/password_reset_form.html',
+        }
+        request.current_app = self.name
+        return PasswordResetView.as_view(**defaults)(request)
+
+    def password_reset_done(self, request, extra_context=None):
+        from django.contrib.auth.views import PasswordResetDoneView
+        defaults = {
+            'extra_context': {**self.each_context(request), **(extra_context or {})},
+            'template_name': self.password_change_done_template or 'vueAdmin/pages/passport/password_reset_done.html'
+        }
+        request.current_app = self.name
+        return PasswordResetDoneView.as_view(**defaults)(request)
+
+    def password_change(self, request, extra_context=None):
+        """
+        Handle the "change password" task -- both form display and validation.
+        """
+        from .forms import AdminPasswordChangeForm
+        from django.contrib.auth.views import PasswordChangeView
+        url = reverse('admin:password_change_done', current_app=self.name)
+        defaults = {
+            'form_class': AdminPasswordChangeForm,
+            'success_url': url,
+            'extra_context': {**self.each_context(request), **(extra_context or {})},
+        }
+        if self.password_change_template is not None:
+            defaults['template_name'] = self.password_change_template
+        request.current_app = self.name
+        return PasswordChangeView.as_view(**defaults)(request)
+
+    def password_change_done(self, request, extra_context=None):
+        """
+        Display the "success" page after a password change.
+        """
+        from django.contrib.auth.views import PasswordChangeDoneView
+        defaults = {
+            'extra_context': {**self.each_context(request), **(extra_context or {})},
+        }
+        if self.password_change_done_template is not None:
+            defaults['template_name'] = self.password_change_done_template
+        request.current_app = self.name
+        return PasswordChangeDoneView.as_view(**defaults)(request)
+
+    def i18n_javascript(self, request, extra_context=None):
+        """
+        Display the i18n JavaScript that the Django admin requires.
+
+        `extra_context` is unused but present for consistency with the other
+        admin views.
+        """
+        return JavaScriptCatalog.as_view(packages=['vueSuit.vueAdmin'])(request)
 
 
 class DefaultAdminSite(LazyObject):

@@ -6,8 +6,8 @@
   </div>
 {% endif %}
 
-{% if results %}
-  <div class="ant-table-body">
+<div class="ant-table-body">
+  {% if results %}
     <table id="result_list">
       <thead class="ant-table-thead">
         <tr>
@@ -37,5 +37,50 @@
         {% endfor %}
       </tbody>
     </table>
-  </div>
-{% endif %}
+  {% else %}
+    <a-alert type="info" :show-icon="true" >
+      <p slot="message">{% trans 'No Result Found' %}</p>
+      <div slot="description">
+        <p>{% trans 'Please check your search & filter conditions' %}</p>
+        <p><a href="">{% trans 'Reset' %}</a></p>
+      </div>
+    </a-alert>
+  {% endif %}
+</div>
+
+<a-button type="primary" @click="showModal">Open Modal with async logic</a-button>
+<a-modal
+  title="Title"
+  :visible="visible"
+  @ok="handleOk"
+  :confirmLoading="confirmLoading"
+  @cancel="handleCancel"
+>
+  <p>{{ModalText}}</p>
+</a-modal>
+<script type="application/javascript">
+  window.data = {
+      ...window.data,
+      ModalText: 'Content of the modal',
+      visible: false,
+      confirmLoading: false,
+  };
+  window.mixins.methods = {
+    ...window.mixins.methods,
+    showModal() {
+      this.visible = true
+    },
+    handleOk(e) {
+      this.ModalText = 'The modal will be closed after two seconds';
+      this.confirmLoading = true;
+      setTimeout(() => {
+        this.visible = false;
+        this.confirmLoading = false;
+      }, 2000);
+    },
+    handleCancel(e) {
+      console.log('Clicked cancel button');
+      this.visible = false
+    }
+  };
+</script>

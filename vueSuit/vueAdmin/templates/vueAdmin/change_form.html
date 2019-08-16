@@ -1,10 +1,10 @@
-{% extends "admin/base_site.html" %}
-{% load i18n static admin_urls admin_modify %}
+{% extends "vueAdmin/base_site.html" %}
+{% load i18n static vueAdmin_urls vueAdmin_modify %}
 
 {# site stylesheet section #}
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" type="text/css" href="{% static "web/css/changelist.css" %}">
+  <link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/pages/changelist.css" %}">
 {% endblock %}
 {# site stylesheet section #}
 
@@ -76,7 +76,7 @@
 
         {% block field_sets %}
           {% for fieldset in adminform %}
-            {% include "admin/includes/fieldset.html" %}
+            {% include "vueAdmin/includes/fieldset.html" %}
           {% endfor %}
         {% endblock %}
 

@@ -6,16 +6,14 @@ import copy
 from collections import OrderedDict
 
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
-# BoundField is imported for backwards compatibility in Django 1.9
-from django.forms.boundfield import BoundField  # NOQA
-from django.forms.fields import Field, FileField
-# pretty_name is imported for backwards compatibility in Django 1.9
-from django.forms.utils import ErrorDict, ErrorList, pretty_name  # NOQA
-from django.forms.widgets import Media, MediaDefiningClass
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, html_safe
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
+
+from .fields import Field, FileField
+from .utils import ErrorDict, ErrorList
+from .widgets import Media, MediaDefiningClass
 
 from .renderers import get_default_renderer
 
@@ -498,7 +496,7 @@ class BaseForm:
 
 
 class Form(BaseForm, metaclass=DeclarativeFieldsMetaclass):
-    "A collection of Fields, plus their associated data."
+    """A collection of Fields, plus their associated data."""
     # This is a separate class from BaseForm in order to abstract the way
     # self.fields is specified. This class (Form) is the one that does the
     # fancy metaclass stuff purely for the semantic sugar -- it allows one

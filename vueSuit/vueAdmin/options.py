@@ -21,7 +21,7 @@ from .checks import (
     BaseModelAdminChecks, InlineModelAdminChecks, ModelAdminChecks,
 )
 from .exceptions import DisallowedModelAdminToField
-from .templatetags.admin_urls import add_preserved_filters
+from .templatetags.vueAdmin_urls import add_preserved_filters
 from .utils import (
     NestedObjects, construct_change_message, flatten_fieldsets,
     get_deleted_objects, lookup_needs_distinct, model_format_dict,
@@ -377,7 +377,7 @@ class BaseModelAdmin(metaclass=forms.MediaDefiningClass):
         return self.sortable_by if self.sortable_by is not None else self.get_list_display(request)
 
     def lookup_allowed(self, lookup, value):
-        from django.contrib.admin.filters import SimpleListFilter
+        from .filters import SimpleListFilter
 
         model = self.model
         # Check FKey lookups that are allowed, so that popups produced by
@@ -726,7 +726,7 @@ class ModelAdmin(BaseModelAdmin):
         """
         Return the ChangeList class for use on the changelist page.
         """
-        from django.contrib.admin.views.main import ChangeList
+        from .views.main import ChangeList
         return ChangeList
 
     def get_changelist_instance(self, request):
@@ -815,7 +815,7 @@ class ModelAdmin(BaseModelAdmin):
 
         The default implementation creates an admin LogEntry object.
         """
-        from django.contrib.admin.models import LogEntry, ADDITION
+        from .models import LogEntry, ADDITION
         return LogEntry.objects.log_action(
             user_id=request.user.pk,
             content_type_id=get_content_type_for_model(object).pk,
@@ -831,7 +831,7 @@ class ModelAdmin(BaseModelAdmin):
 
         The default implementation creates an admin LogEntry object.
         """
-        from django.contrib.admin.models import LogEntry, CHANGE
+        from .models import LogEntry, CHANGE
         return LogEntry.objects.log_action(
             user_id=request.user.pk,
             content_type_id=get_content_type_for_model(object).pk,
@@ -848,7 +848,7 @@ class ModelAdmin(BaseModelAdmin):
 
         The default implementation creates an admin LogEntry object.
         """
-        from django.contrib.admin.models import LogEntry, DELETION
+        from .models import LogEntry, DELETION
         return LogEntry.objects.log_action(
             user_id=request.user.pk,
             content_type_id=get_content_type_for_model(object).pk,
@@ -1675,9 +1675,10 @@ class ModelAdmin(BaseModelAdmin):
         """
         The 'change list' admin view for this model.
         """
-        from django.contrib.admin.views.main import ERROR_FLAG
+        from .views.main import ERROR_FLAG
         opts = self.model._meta
         app_label = opts.app_label
+
         if not self.has_view_or_change_permission(request):
             raise PermissionDenied
 
@@ -1691,7 +1692,7 @@ class ModelAdmin(BaseModelAdmin):
             # something is screwed up with the database, so display an error
             # page.
             if ERROR_FLAG in request.GET:
-                return SimpleTemplateResponse('admin/invalid_setup.html', {
+                return SimpleTemplateResponse('vueAdmin/pages/exception/invalid_setup.html', {
                     'title': _('Database error'),
                 })
             return HttpResponseRedirect(request.path + '?' + ERROR_FLAG + '=1')
@@ -1803,7 +1804,6 @@ class ModelAdmin(BaseModelAdmin):
             'selection_note': _('0 of %(cnt)s selected') % {'cnt': len(cl.result_list)},
             'selection_note_all': selection_note_all % {'total_count': cl.result_count},
             'title': cl.title,
-            'is_popup': cl.is_popup,
             'to_field': cl.to_field,
             'cl': cl,
             'media': media,
@@ -1820,9 +1820,9 @@ class ModelAdmin(BaseModelAdmin):
         request.current_app = self.admin_site.name
 
         return TemplateResponse(request, self.change_list_template or [
-            'admin/%s/%s/change_list.html' % (app_label, opts.model_name),
-            'admin/%s/change_list.html' % app_label,
-            'admin/change_list.html'
+            'vueAdmin/%s/%s/change_list.html' % (app_label, opts.model_name),
+            'vueAdmin/%s/change_list.html' % app_label,
+            'vueAdmin/change_list.html'
         ], context)
 
     def get_deleted_objects(self, objs, request):
@@ -1896,8 +1896,8 @@ class ModelAdmin(BaseModelAdmin):
         return self.render_delete_form(request, context)
 
     def history_view(self, request, object_id, extra_context=None):
-        "The 'history' admin view for this model."
-        from django.contrib.admin.models import LogEntry
+        """ The 'history' admin view for this model. """
+        from .models import LogEntry
         # First check if the user can see this history.
         model = self.model
         obj = self.get_object(request, unquote(object_id))
