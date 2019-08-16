@@ -11,11 +11,11 @@
 
 ### 📎 项目说明:
 
-    > django-vue-suit 是一套正在开发的，后续将支持开发者，创建一套完整的前中后台都有的项目的构建脚手架，能够帮助用户通过简单的构建 models 层面就可以定义最终的前中后台展示效果 ~ 项目由 django + ant-design-vue 构成，并没有使用 node 作为开发环境，作为纯后端应用存在 ~
-    > vueSuit 是核心源代码模块，参照了 django.contrib.admin 模块和 django.forms 模块，创建了各自相对应的 vueAdmin 和 vueForms 模块，并且提供了一套完整的 vuePacks 模块使用 ~
-    > vueAdmin 是替换 django admin 模块，提供了完整的原先 django admin 功能，同时还提供了一套完整的拓展 UI 使用，方便用户自定义一些展示效果 ~
-    > vueForms 是替换 django forms 模块，提供了完整的原先 django forms 功能，同时还提供了一套 ant-design-vue forms 的配置功能，实现了由后台 python 代码控制前台 form 表单的基本校验功能 ~
-    > vuePacks 是完全新建的模块，使用方法会参照 django admin 的使用，提供一套注册和定义展示的机制，让开发者仅通过定义一个简单的 python 脚本就实现对于后台数据的展示，实现一套完整的前台应用 ~
+  * django-vue-suit 是一套正在开发的，后续将支持开发者，创建一套完整的前中后台都有的项目的构建脚手架，能够帮助用户通过简单的构建 models 层面就可以定义最终的前中后台展示效果 ~ 项目由 django + ant-design-vue 构成，并没有使用 node 作为开发环境，作为纯后端应用存在 ~
+  * vueSuit 是核心源代码模块，参照了 django.contrib.admin 模块和 django.forms 模块，创建了各自相对应的 vueAdmin 和 vueForms 模块，并且提供了一套完整的 vuePacks 模块使用 ~
+    + vueAdmin 是替换 django admin 模块，提供了完整的原先 django admin 功能，同时还提供了一套完整的拓展 UI 使用，方便用户自定义一些展示效果 ~
+    + vueForms 是替换 django forms 模块，提供了完整的原先 django forms 功能，同时还提供了一套 ant-design-vue forms 的配置功能，实现了由后台 python 代码控制前台 form 表单的基本校验功能 ~
+    + vuePacks 是完全新建的模块，使用方法会参照 django admin 的使用，提供一套注册和定义展示的机制，让开发者仅通过定义一个简单的 python 脚本就实现对于后台数据的展示，实现一套完整的前台应用 ~
     
 ### 📝 待办清单:
 
