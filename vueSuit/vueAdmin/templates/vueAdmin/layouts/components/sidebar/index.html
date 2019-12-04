@@ -4,7 +4,7 @@
 
 <link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/layouts/components/sidebar.css" %}">
 
-<script type="text/x-template" id="demo-sidebar">
+<script type="text/x-template" id="suit-sidebar">
   <a-layout-sider :trigger="null" collapsible v-model="collapsed" theme="light">
     <div style="text-align: center; margin: 20px auto;">
       <div class="demo-user-avatar">
@@ -36,15 +36,13 @@
   </a-layout-sider>
 </script>
 
-{{ app_list|json_script:"menu-data" }}
-
-<script type="text/javascript">
-  Vue.component('demo-sidebar', {
+<script type="application/javascript">
+  Vue.component('suit-sidebar', {
     delimiters: ['<%', '%>'],
-    template: '#demo-sidebar',
+    template: '#suit-sidebar',
     data: function () {
       return {
-        menus: JSON.parse(document.getElementById('menu-data').textContent),
+        menus: JSON.parse(`{{ menus }}`),
         openKeys: [],
         rootSubmenuKeys: [],
       }

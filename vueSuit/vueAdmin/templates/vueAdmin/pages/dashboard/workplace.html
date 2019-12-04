@@ -1,13 +1,8 @@
 {% extends "vueAdmin/base_site.html" %}
 {% load i18n static %}
 
-{% block extrastyle %}
-  {{ block.super }}
-  <link rel="stylesheet" type="text/css" href="{% static "vueAdmin/css/pages/dashboard.css" %}">
-{% endblock %}
-
 {% block x-template %}
-  {% include 'vueAdmin/components/quicklink/index.html' %}
+  {% include 'vueAdmin/components/statistic/index.html' %}
   {% include 'vueAdmin/components/timeline/index.html' %}
   {% include 'vueAdmin/components/chart/line.html' %}
   {% include 'vueAdmin/components/chart/pie.html' %}
@@ -17,11 +12,11 @@
 {% block app %}
   <div style="height: 100vh">
     <div :style="contentStyle">
-      <demo-workplace-quick-link></demo-workplace-quick-link>
+      <component-data-statistic></component-data-statistic>
     </div>
-{#    <div :style="contentStyle">#}
-{#      <demo-workplace-line-chart source="{% url 'student-enroll-trending' %}"></demo-workplace-line-chart>#}
-{#    </div>#}
+    <div :style="contentStyle">
+      <demo-workplace-line-chart source="{% url 'student-enroll-trending' %}"></demo-workplace-line-chart>
+    </div>
     <a-row :gutter="8">
       <a-col :span="16">
         <div :style="contentStyle">

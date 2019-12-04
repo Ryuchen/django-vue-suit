@@ -1,7 +1,7 @@
 {% load i18n %}
 
-<script type="text/x-template" id="demo-header-setting">
-  <li v-show="show">
+<script type="text/x-template" id="suit-header-setting">
+  <li>
     <div class="toolbox-item">
       <a-dropdown :trigger="['click']" placement="bottomCenter">
         <a-button type="primary">
@@ -29,17 +29,10 @@
   </li>
 </script>
 
-<script type="text/javascript">
-  Vue.component('demo-header-setting', {
+<script type="application/javascript">
+  Vue.component('suit-header-setting', {
     delimiters: ['<%', '%>'],
-    props: {
-      show: {
-        default: false,
-        type: Boolean,
-        required: true
-      }
-    },
-    template: '#demo-header-setting',
+    template: '#suit-header-setting',
     data: function () {
       return {
         toolboxIconStyle: {

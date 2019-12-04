@@ -1,6 +1,6 @@
 {% load i18n static %}
 
-<script type="text/x-template" id="demo-header-utility">
+<script type="text/x-template" id="suit-header-utility">
   <li v-show="show">
     <div class="toolbox-item">
       <a-button type="primary" @click="showUtility">
@@ -31,8 +31,8 @@
   </li>
 </script>
 
-<script type="text/javascript">
-  Vue.component('demo-header-utility', {
+<script type="application/javascript">
+  Vue.component('suit-header-utility', {
     delimiters: ['<%', '%>'],
     props: {
       show: {
@@ -41,7 +41,7 @@
         required: true
       }
     },
-    template: '#demo-header-utility',
+    template: '#suit-header-utility',
     data: function () {
       return {
         toolboxIconStyle: {

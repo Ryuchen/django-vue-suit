@@ -1,3 +1,5 @@
+import json
+
 from functools import update_wrapper
 from weakref import WeakSet
 
@@ -11,6 +13,7 @@ from django.template.response import TemplateResponse
 from django.urls import NoReverseMatch, reverse
 from django.utils.functional import LazyObject
 from django.utils.module_loading import import_string
+from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.cache import never_cache
@@ -331,16 +334,21 @@ class AdminSite:
 
             info = (app_label, model._meta.model_name)
             model_dict = {
+                'key': model._meta.object_name,
                 'name': capfirst(model._meta.verbose_name_plural),
-                'object_name': model._meta.object_name,
                 'icon': '',
+                'order': 0,
                 'perms': perms,
+                'object_name': model._meta.object_name,
                 'admin_url': None,
                 'add_url': None,
             }
 
             if hasattr(model, 'vueAdmin_icon'):
                 model_dict['icon'] = model.vueAdmin_icon()
+
+            if hasattr(model, 'vueAdmin_order'):
+                model_dict['order'] = model.vueAdmin_order()
 
             if perms.get('change') or perms.get('view'):
                 model_dict['view_only'] = not perms.get('change')
@@ -358,14 +366,20 @@ class AdminSite:
                 app_dict[app_label]['models'].append(model_dict)
             else:
                 app_dict[app_label] = {
+                    'key': apps.get_app_config(app_label).name,
                     'name': apps.get_app_config(app_label).verbose_name,
                     'icon': apps.get_app_config(app_label).vueAdmin_icon,
+                    'order': apps.get_app_config(app_label).vueAdmin_order,
                     'app_label': app_label,
                     'has_module_perms': has_module_perms,
                     'models': [model_dict],
                 }
         if label:
             return app_dict.get(label)
+
+        for item in app_dict:
+            if app_dict[item]['models']:
+                app_dict[item]['key'] = 'sub{}'.format(app_dict[item]['key'])
         return app_dict
 
     def get_app_list(self, request):
@@ -376,59 +390,134 @@ class AdminSite:
         app_dict = self._build_app_dict(request)
 
         # Sort the apps alphabetically.
-        app_list = sorted(app_dict.values(), key=lambda x: x['name'].lower())
+        app_list = sorted(app_dict.values(), key=lambda x: x['order'])
 
         # Sort the models alphabetically within each app.
         for app in app_list:
-            app['models'].sort(key=lambda x: x['name'])
+            app['models'].sort(key=lambda x: x['order'])
 
         return app_list
 
-    @never_cache
-    def index(self, request, extra_context=None):
-        """
-        Display the main admin index page, which lists all of the installed
-        apps that have been registered in this site.
-        """
-        app_list = self.get_app_list(request)
+    def _build_app_statistic(self, request, label=None):
+        statistic_dict = {}
 
-        context = {
-            **self.each_context(request),
-            'title': self.index_title,
-            'app_list': app_list,
-            **(extra_context or {}),
-        }
-
-        request.current_app = self.name
-
-        return TemplateResponse(request, self.index_template or 'vueAdmin/pages/index.html', context)
-
-    def dashboard(self, request, extra_context=None):
-        """
-        Log in dashboard display for the setting home page type
-        :param request:
-        :param extra_context:
-        :return:
-        """
-        app_list = self.get_app_list(request)
-
-        from .views.views import DashboardWorkPlaceView, DashboardOverviewView
-        context = {
-            **self.each_context(request),
-            'app_list': app_list,
-            **(extra_context or {})
-        }
-        # No display form
-        defaults = {
-            'extra_context': context,
-        }
-        request.current_app = self.name
-
-        dashboard = self._settings.get_config("VUEADMIN_HOME_TYPE")
-        if dashboard == "Workplace":
-            return DashboardWorkPlaceView.as_view(**defaults)(request)
+        if label:
+            models = {
+                m: m_a for m, m_a in self._registry.items()
+                if m._meta.app_label == label
+            }
         else:
-            return DashboardOverviewView.as_view(**defaults)(request)
+            models = self._registry
+
+        for model, model_admin in models.items():
+            app_label = model._meta.app_label
+
+            has_module_perms = model_admin.has_module_permission(request)
+            if not has_module_perms:
+                continue
+
+            perms = model_admin.get_model_perms(request)
+
+            # Check whether user has any perm for this module.
+            # If so, add the module to the model_list.
+            if True not in perms.values():
+                continue
+
+            info = (app_label, model._meta.model_name)
+            model_dict = {
+                'name': capfirst(model._meta.verbose_name_plural),
+                'order': 0,
+                'perms': perms,
+                'total': model.objects.count(),
+                'object_name': model._meta.object_name,
+                'admin_url': None,
+            }
+
+            if hasattr(model, 'vueAdmin_order'):
+                model_dict['order'] = model.vueAdmin_order()
+
+            if perms.get('change') or perms.get('view'):
+                model_dict['view_only'] = not perms.get('change')
+                try:
+                    model_dict['admin_url'] = reverse('admin:%s_%s_changelist' % info, current_app=self.name)
+                except NoReverseMatch:
+                    pass
+
+            if app_label in statistic_dict:
+                statistic_dict[app_label]['models'].append(model_dict)
+            else:
+                statistic_dict[app_label] = {
+                    'key': apps.get_app_config(app_label).name,
+                    'name': apps.get_app_config(app_label).verbose_name,
+                    'icon': apps.get_app_config(app_label).vueAdmin_icon,
+                    'order': apps.get_app_config(app_label).vueAdmin_order,
+                    'app_label': app_label,
+                    'has_module_perms': has_module_perms,
+                    'models': [model_dict],
+                }
+        if label:
+            return statistic_dict.get(label)
+
+        return statistic_dict
+
+    def get_app_statistic(self, request):
+        app_dict = self._build_app_statistic(request)
+
+        # Sort the apps alphabetically.
+        app_list = sorted(app_dict.values(), key=lambda x: x['order'])
+
+        # Sort the models alphabetically within each app.
+        for app in app_list:
+            app['models'].sort(key=lambda x: x['order'])
+
+        return app_list
+
+    def get_chart_source(self, request, chart):
+        models = self._registry
+        for model, model_admin in models.items():
+            app_label = model._meta.app_label
+
+            has_module_perms = model_admin.has_module_permission(request)
+            if not has_module_perms:
+                continue
+
+            perms = model_admin.get_model_perms(request)
+
+            # Check whether user has any perm for this module.
+            # If so, add the module to the model_list.
+            if True not in perms.values():
+                continue
+
+            info = (app_label, model._meta.model_name)
+            model_dict = {
+                'name': capfirst(model._meta.verbose_name_plural),
+                'order': 0,
+                'perms': perms,
+                'total': model.objects.count(),
+                'object_name': model._meta.object_name,
+                'admin_url': None,
+            }
+
+            if hasattr(model, 'vueAdmin_order'):
+                model_dict['order'] = model.vueAdmin_order()
+
+            if app_label in statistic_dict:
+                statistic_dict[app_label]['models'].append(model_dict)
+            else:
+                statistic_dict[app_label] = {
+                    'key': apps.get_app_config(app_label).name,
+                    'name': apps.get_app_config(app_label).verbose_name,
+                    'icon': apps.get_app_config(app_label).vueAdmin_icon,
+                    'order': apps.get_app_config(app_label).vueAdmin_order,
+                    'app_label': app_label,
+                    'has_module_perms': has_module_perms,
+                    'models': [model_dict],
+                }
+        if label:
+            return statistic_dict.get(label)
+
+        return statistic_dict
+
 
     @never_cache
     def login(self, request, extra_context=None):
@@ -542,6 +631,55 @@ class AdminSite:
             defaults['template_name'] = self.password_change_done_template
         request.current_app = self.name
         return PasswordChangeDoneView.as_view(**defaults)(request)
+
+    @never_cache
+    def index(self, request, extra_context=None):
+        """
+        Display the main admin index page, which lists all of the installed
+        apps that have been registered in this site.
+        """
+        menus = self.get_app_list(request)
+
+        context = {
+            **self.each_context(request),
+            'title': self.index_title,
+            'menus': mark_safe(json.dumps(menus)),
+            **(extra_context or {}),
+        }
+
+        request.current_app = self.name
+
+        return TemplateResponse(request, self.index_template or 'vueAdmin/pages/index.html', context)
+
+    def dashboard(self, request, extra_context=None):
+        """
+        Log in dashboard display for the setting home page type
+        """
+        statistic = self.get_app_statistic(request)
+        chartdata = {
+            'pie_source': self.get_chart_source(request, 'pie'),
+            'line_source': self.get_chart_source(request, 'line'),
+            'radar_source': self.get_chart_source(request, 'radar'),
+        }
+
+        from .views.views import DashboardWorkPlaceView, DashboardOverviewView
+        context = {
+            **self.each_context(request),
+            'statistic': statistic,
+            'chartdata': chartdata,
+            **(extra_context or {})
+        }
+        # No display form
+        defaults = {
+            'extra_context': context,
+        }
+        request.current_app = self.name
+
+        dashboard = self._settings.get_config("VUEADMIN_HOME_TYPE")
+        if dashboard == "Workplace":
+            return DashboardWorkPlaceView.as_view(**defaults)(request)
+        else:
+            return DashboardOverviewView.as_view(**defaults)(request)
 
     def i18n_javascript(self, request, extra_context=None):
         """

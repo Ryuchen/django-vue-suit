@@ -102,4 +102,4 @@ Nameplace ( 虚位以待 )
 
 ### 🤝 贡献源码:
 
-Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/Ryuchen/Bistu/issues).
+Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/Ryuchen/vueSite/issues).

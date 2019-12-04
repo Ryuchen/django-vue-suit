@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<script type="text/x-template" id="demo-header-notice">
+<script type="text/x-template" id="suit-header-notice">
   <li v-show="show">
     <div class="toolbox-item">
       <a-popover trigger="click" placement="bottomRight" :overlayStyle="{ width: '300px', top: '50px' }">
@@ -43,8 +43,8 @@
   </li>
 </script>
 
-<script type="text/javascript">
-  Vue.component('demo-header-notice', {
+<script type="application/javascript">
+  Vue.component('suit-header-notice', {
     delimiters: ['<%', '%>'],
     props: {
       show: {
@@ -53,7 +53,7 @@
         required: true
       }
     },
-    template: '#demo-header-notice',
+    template: '#suit-header-notice',
     data: function () {
       return {
         toolboxIconStyle: {

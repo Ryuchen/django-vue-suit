@@ -1,6 +1,6 @@
 {% load i18n vueAdmin_sets %}
 
-<script type="text/x-template" id="demo-header-logo">
+<script type="text/x-template" id="suit-header-logo">
   <div :style="logoWrapperStyle">
     <a href="{% url 'admin:index' %}" style="display: inherit;">
       <img v-show="collapsed" :style="logoImgStyle" :src="src.mini.src" :alt="alt" />
@@ -11,10 +11,10 @@
   </div>
 </script>
 
-<script type="text/javascript">
-  Vue.component('demo-header-logo', {
+<script type="application/javascript">
+  Vue.component('suit-header-logo', {
     delimiters: ['<%', '%>'],
-    template: '#demo-header-logo',
+    template: '#suit-header-logo',
     data: function () {
       const logo = JSON.parse(`{% vue_logo %}`);
       return {

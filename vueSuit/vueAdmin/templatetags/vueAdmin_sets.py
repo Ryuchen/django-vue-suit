@@ -7,7 +7,6 @@
 # @Desc :
 # ==================================================
 import os
-import re
 import json
 import datetime
 
@@ -21,18 +20,17 @@ from django.urls import NoReverseMatch
 from django.utils.encoding import force_text
 from django.utils.functional import Promise
 from django.core.serializers.json import DjangoJSONEncoder
-from django.contrib.admin.templatetags.base import InclusionAdminNode
 
 from django.contrib.admin.views.main import (
     ALL_VAR, ORDER_VAR, PAGE_VAR, SEARCH_VAR,
 )
 from django.db import models
-from django.utils import formats
-from django.utils.html import format_html, _strip_once, strip_tags
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.utils.text import capfirst
-from django.utils.translation import gettext as _
 
+from ..settings import VueAdminSettings
+
+vsettings = VueAdminSettings()
 register = template.Library()
 
 
@@ -74,22 +72,13 @@ class LazyEncoder(DjangoJSONEncoder):
 def vue_logo():
     logo = {
         "full": {
-            "src": ""
+            "src": vsettings.get_config('VUEADMIN_HEADER_LOGOFULL')
         },
         "mini": {
-            "src": "",
+            "src": vsettings.get_config('VUEADMIN_HEADER_LOGOMINI')
         },
         "alt": "logo"
     }
-    logo["full"]["src"] = __get_config('VUEADMIN_HEADER_LOGOFULL')
-    logo["mini"]["src"] = __get_config('VUEADMIN_HEADER_LOGOMINI')
-
-    if logo["full"]["src"] is None:
-        logo["full"]["src"] = settings.STATIC_URL + "vueAdmin/img/logo-full.png"
-
-    if logo["mini"]["src"] is None:
-        logo["mini"]["src"] = settings.STATIC_URL + "vueAdmin/img/logo-mini.png"
-
     return mark_safe(json.dumps(logo, cls=LazyEncoder))
 
 
@@ -97,102 +86,24 @@ def vue_logo():
 def vue_toolbox():
     toolbox = {
         "lock": {
-            "enable": True,
+            "enable": vsettings.get_config('VUEADMIN_HEADER_TOOLBOX_LOCK'),
             "verify": "email"
         },
         "github": {
-            "enable": True,
+            "enable": vsettings.get_config('VUEADMIN_HEADER_TOOLBOX_GITHUB'),
             "link": "https://github.com/ryuchen"
         },
         "search": {
-            "enable": True
+            "enable": vsettings.get_config('VUEADMIN_HEADER_TOOLBOX_SEARCH'),
         },
         "notice": {
-            "enable": True
+            "enable": vsettings.get_config('VUEADMIN_HEADER_TOOLBOX_NOTICE'),
         },
         "utility": {
-            "enable": True
-        },
-        "setting": {
-            "enable": True
+            "enable": vsettings.get_config('VUEADMIN_HEADER_TOOLBOX_UTILITY'),
         }
     }
-    if __get_config('VUEADMIN_HEADER_TOOLBOX_LOCK') is not None:
-        toolbox["lock"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_LOCK')
-    if __get_config('VUEADMIN_HEADER_TOOLBOX_GITHUB') is not None:
-        toolbox["github"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_GITHUB')
-    if __get_config('GITHUB_URL') is not None:
-        toolbox["github"]["link"] = __get_config('GITHUB_URL')
-    if __get_config('VUEADMIN_HEADER_TOOLBOX_SEARCH') is not None:
-        toolbox["search"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_SEARCH')
-    if __get_config('VUEADMIN_HEADER_TOOLBOX_NOTICE') is not None:
-        toolbox["notice"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_NOTICE')
-    if __get_config('VUEADMIN_HEADER_TOOLBOX_UTILITY') is not None:
-        toolbox["utility"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_UTILITY')
-    if __get_config('VUEADMIN_HEADER_TOOLBOX_SETTING') is not None:
-        toolbox["setting"]["enable"] = __get_config('VUEADMIN_HEADER_TOOLBOX_SETTING')
     return mark_safe(json.dumps(toolbox, cls=LazyEncoder))
-
-
-@register.simple_tag
-def vue_home():
-    home = {
-        "type": "Workplace",
-        "title": "Workplace",
-        "url": ""
-    }
-    home_type = __get_config('VUEADMIN_HOME_TYPE')
-    if home_type is not None:
-        home["type"] = home_type
-        if home["type"] in ["Workplace", "Overview"]:
-            home["title"] = home_type
-
-        if home["type"] == "Customize":
-            home["title"] = __get_config('VUEADMIN_HOME_TITLE')
-            home["url"] = __get_config('VUEADMIN_HOME_URL')
-
-    return mark_safe(json.dumps(home, cls=LazyEncoder))
-
-
-@register.simple_tag(takes_context=True)
-def vue_menu(context):
-    data = []
-
-    menus = __get_config('ANT_DESIGN_VUE_NAV_MENUS')
-    if menus:  # if user define site menus use defines!
-        if __get_config('ANT_DESIGN_VUE_NAV_MENUS_DYNAMIC'):
-            menus = _import_reload(__get_config('DJANGO_SETTINGS_MODULE')).ANT_DESIGN_VUE_NAV_MENUS
-        key_start = 1
-        for menu in menus:
-            if "models" in menu and menu["models"]:
-                menu["key"] = "sub{}".format(key_start)
-                for model in menu["models"]:
-                    key_start += 1
-                    model["key"] = "{}".format(key_start)
-            else:
-                key_start += 1
-                menu["key"] = "{}".format(key_start)
-        data = menus
-    else:  # if user not define site menus use default!
-        app_list = context.get('app_list')
-        for app in app_list:
-            _models = [
-                {
-                    'name': m.get('name'),
-                    'icon': '',
-                    'url': m.get('admin_url'),
-                }
-                for m in app.get('models')
-            ] if app.get('models') else []
-
-            module = {
-                'name': app.get('name'),
-                'icon': '',
-                'models': _models
-            }
-            data.append(module)
-
-    return mark_safe(json.dumps(data, cls=LazyEncoder))
 
 
 @register.simple_tag

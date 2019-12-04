@@ -1,10 +1,10 @@
 {% load i18n static %}
 
-<link href="{% static 'web/css/components/quicklink.css' %}" rel="stylesheet">
+<link href="{% static 'vueAdmin/css/components/quicklink.css' %}" rel="stylesheet">
 
 <script type="text/x-template" id="workplace-quick-link">
   <a-card :bordered="false">
-    <span slot="title"><a-icon type="link" ></a-icon> {% trans '快捷方式' %}</span>
+    <span slot="title"><a-icon type="link" ></a-icon> {% trans 'Quick Links' %}</span>
     {% if app_list %}
       <a-carousel autoplay>
         <a slot="customPaging">

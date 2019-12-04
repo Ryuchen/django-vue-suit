@@ -1,6 +1,6 @@
 {% load i18n %}
 
-<script type="text/x-template" id="demo-header-search">
+<script type="text/x-template" id="suit-header-search">
   <div v-show="show" style="width: 100%">
     <a-input placeholder="{% trans 'Global Searching ...' %}" v-model="globalSearchPattern">
       <a-icon slot="prefix" type="search" ></a-icon>
@@ -9,8 +9,8 @@
   </div>
 </script>
 
-<script type="text/javascript">
-  Vue.component('demo-header-search', {
+<script type="application/javascript">
+  Vue.component('suit-header-search', {
     delimiters: ['<%', '%>'],
     props: {
       show: {
@@ -19,7 +19,7 @@
         required: true
       }
     },
-    template: '#demo-header-search',
+    template: '#suit-header-search',
     data: function () {
       return {
         toolboxIconStyle: {

@@ -8,3 +8,4 @@ class CultivateConfig(AppConfig):
 
     # vueAdmin settings
     vueAdmin_icon = 'user'
+    vueAdmin_order = 1

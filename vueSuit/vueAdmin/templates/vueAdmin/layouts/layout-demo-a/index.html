@@ -6,15 +6,15 @@
 {% include 'vueAdmin/layouts/components/footer/index.html' %}
 {% include 'vueAdmin/components/iframe/index.html' %}
 
-<template id="layout-demo-a">
+<script type="text/x-template" id="layout-demo-a">
   <a-layout>
-    <demo-header></demo-header>
+    <suit-header></suit-header>
     <a-layout style="height: calc(100vh - 64px)">
-      <demo-sidebar></demo-sidebar>
+      <suit-sidebar></suit-sidebar>
       <a-layout>
         <a-layout-content>
           <div class="card-container" id="content-wrapper">
-            <a-tabs hide-add type="editable-card" :tabBarGutter=2 v-model="activeKey"
+            <a-tabs hide-add type="editable-card" :tab-bar-gutter=1 v-model="activeKey"
                 @edit="onEdit"
                 @prevClick="callback"
                 @nextClick="callback"
@@ -31,11 +31,11 @@
             </a-tabs>
           </div>
         </a-layout-content>
-        <demo-footer></demo-footer>
+        <suit-footer></suit-footer>
       </a-layout>
     </a-layout>
   </a-layout>
-</template>
+</script>
 
 <script type="application/javascript">
   Vue.component('layout-demo-a', {

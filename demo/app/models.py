@@ -29,6 +29,10 @@ class Thesis(models.Model):
     def vueAdmin_icon(cls):
         return 'user'
 
+    @classmethod
+    def vueAdmin_order(cls):
+        return 1
+
     class Meta:
         db_table = 'thesis'
         verbose_name = "毕业论文"
@@ -55,6 +59,14 @@ class ThesisPlaCheck(models.Model):
     def __str__(self):
         return "查重:《{0}》".format(self.pla_thesis.the_title)
 
+    @classmethod
+    def vueAdmin_icon(cls):
+        return 'user'
+
+    @classmethod
+    def vueAdmin_order(cls):
+        return 2
+
     class Meta:
         db_table = 'thesis_pla_check'
         verbose_name = "论文查重"
@@ -80,6 +92,14 @@ class ThesisBlindReview(models.Model):
     def __str__(self):
         return "盲审:《{0}》".format(self.bli_thesis.the_title)
 
+    @classmethod
+    def vueAdmin_icon(cls):
+        return 'user'
+
+    @classmethod
+    def vueAdmin_order(cls):
+        return 3
+
     class Meta:
         db_table = 'thesis_blind_review'
         verbose_name = "论文盲审"
@@ -103,6 +123,14 @@ class ThesisOpenReport(models.Model):
     schedule_count = models.IntegerField(null=False, default=0, verbose_name="按期开题人数")
     delay_count = models.IntegerField(null=False, default=0, verbose_name="延期开题人数")
     fail_count = models.IntegerField(null=False, default=0, verbose_name="开题不通过人数")
+
+    @classmethod
+    def vueAdmin_icon(cls):
+        return 'user'
+
+    @classmethod
+    def vueAdmin_order(cls):
+        return 4
 
     class Meta:
         db_table = 'thesis_open_report'

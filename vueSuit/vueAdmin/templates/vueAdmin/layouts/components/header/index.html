@@ -8,9 +8,9 @@
 
 <link href="{% static 'vueAdmin/css/layouts/components/widgets/header/toolbox.css' %}" rel="stylesheet">
 
-<script type="text/x-template" id="demo-header">
+<script type="text/x-template" id="suit-header">
   <a-layout-header :style="{ padding: '0' }">
-    <demo-header-logo></demo-header-logo>
+    <suit-header-logo></suit-header-logo>
     <div class="demo-header-toolbox-wrapper">
       <ul class="toolbox-items-wrapper">
         <li>
@@ -36,21 +36,21 @@
         </li>
       </ul>
       <div class="toolbox-search">
-        <demo-header-search :show="toolbox.search.enable"></demo-header-search>
+        <suit-header-search :show="toolbox.search.enable"></suit-header-search>
       </div>
       <ul class="toolbox-items-wrapper">
-        <demo-header-notice :show="toolbox.notice.enable"></demo-header-notice>
-        <demo-header-utility :show="toolbox.utility.enable"></demo-header-utility>
-        <demo-header-setting :show="toolbox.setting.enable"></demo-header-setting>
+        <suit-header-notice :show="toolbox.notice.enable"></suit-header-notice>
+        <suit-header-utility :show="toolbox.utility.enable"></suit-header-utility>
+        <suit-header-setting></suit-header-setting>
       </ul>
     </div>
   </a-layout-header>
 </script>
 
-<script type="text/javascript">
-  Vue.component('demo-header', {
+<script type="application/javascript">
+  Vue.component('suit-header', {
     delimiters: ['<%', '%>'],
-    template: '#demo-header',
+    template: '#suit-header',
     data: function () {
       return {
         toolbox: JSON.parse(`{% vue_toolbox %}`),

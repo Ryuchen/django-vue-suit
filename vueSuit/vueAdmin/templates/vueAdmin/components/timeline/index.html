@@ -1,6 +1,6 @@
 {% load log i18n static%}
 
-<link href="{% static 'web/css/components/timeline.css' %}" rel="stylesheet">
+<link href="{% static 'vueAdmin/css/components/timeline.css' %}" rel="stylesheet">
 
 <script type="text/x-template" id="demo-workplace-timeline">
   <a-card :bordered="false">
@@ -54,7 +54,7 @@
   </a-card>
 </script>
 
-<script type="text/javascript">
+<script type="application/javascript">
   Vue.component('demo-workplace-timeline', {
       delimiters: ['<%', '%>'],
       template: '#demo-workplace-timeline'

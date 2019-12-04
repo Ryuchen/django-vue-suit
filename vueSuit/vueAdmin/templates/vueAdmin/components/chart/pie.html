@@ -1,7 +1,7 @@
 {% load i18n %}
 {% load static %}
 
-<link href="{% static 'web/css/components/piechart.css' %}" rel="stylesheet">
+<link href="{% static 'vueAdmin/css/components/piechart.css' %}" rel="stylesheet">
 
 <script type="text/x-template" id="demo-workplace-pie-chart">
   <a-card :bordered="false">
@@ -20,7 +20,7 @@
   </a-card>
 </script>
 
-<script type="text/javascript">
+<script type="application/javascript">
 Vue.prototype.$http = axios;
 Vue.component('demo-workplace-pie-chart', {
   delimiters: ['<%', '%>'],

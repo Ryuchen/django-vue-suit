@@ -1,0 +1,44 @@
+{% load i18n static %}
+
+<link href="{% static 'vueAdmin/css/components/statistic.css' %}" rel="stylesheet">
+
+<script type="text/x-template" id="component-data-statistic">
+  <div id="statistic">
+    {% if statistic %}
+      <a-card :bordered="false">
+        <span slot="title"><a-icon type="link" ></a-icon> {% trans 'Models Statistic' %}</span>
+        <a-carousel autoplay>
+          <a slot="customPaging">
+            <button></button>
+          </a>
+          {% for app in statistic %}
+            <div id="statistic-item">
+              <a-row :gutter="16">
+                {% for model in app.models %}
+                  <a-col class="gutter-row" :xs="24" :sm="12" :lg="8" :xl="6" :xxl="4">
+                    <a-card hoverable :bordered="false">
+                      <a-card-meta>
+                        <span slot="title">{{ app.name }}<a-divider type="vertical" />{{ model.name }}</span>
+                        <span slot="description">{% trans 'Total' %}: {{ model.total }}</span>
+                        <a-avatar slot="avatar">{{ model.object_name|first }}</a-avatar>
+                      </a-card-meta>
+                    </a-card>
+                  </a-col>
+                {% endfor %}
+              </a-row>
+            </div>
+          {% endfor %}
+        </a-carousel>
+      </a-card>
+    {% else %}
+      <p>{% trans "You don't banding any model to statistic." %}</p>
+    {% endif %}
+  </div>
+</script>
+
+<script type="application/javascript">
+  Vue.component('component-data-statistic', {
+    delimiters: ['<%', '%>'],
+    template: '#component-data-statistic',
+  })
+</script>
